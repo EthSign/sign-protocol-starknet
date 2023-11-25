@@ -13,6 +13,7 @@ mod SAS {
     use super::StoreFelt252Span;
     use starknet::secp256_trait::Signature;
     use starknet::get_caller_address;
+    use interfaces::hook::{ISASReceiverHookDispatcher, ISASReceiverHookDispatcherTrait};
 
     #[storage]
     struct Storage {
@@ -25,13 +26,13 @@ mod SAS {
     #[abi(embed_v0)]
     impl SASVersion of IVersionable<ContractState> {
         fn version(self: @ContractState) -> felt252 {
-            '0.0.1'
+            '0.1.0'
         }
     }
 
     #[abi(embed_v0)]
     impl SASImpl of ISAS<ContractState> {
-        fn self_attest(ref self: ContractState, attestationId: felt252, schemaId: felt252, validUntil: u64, data: Span::<felt252>) {
+        fn self_attest(ref self: ContractState, attestationId: felt252, schemaId: felt252, validUntil: u64, data: Span::<felt252>) -> bool {
             self._validate_attest_input_or_throw(attestationId, schemaId, validUntil);
             self._unsafe_attest(
                 attestationId: attestationId, 
@@ -43,11 +44,13 @@ mod SAS {
                 revoked: false,
                 data: data
             );
+            self._call_receiver_hook_if_defined(attestationId, schemaId, false)
         }
 
-        fn self_attest_batch(ref self: ContractState, attestationId: Span::<felt252>, schemaId: Span::<felt252>, validUntil: Array::<u64>, data: Span::<Span::<felt252>>) {
+        fn self_attest_batch(ref self: ContractState, attestationId: Span::<felt252>, schemaId: Span::<felt252>, validUntil: Array::<u64>, data: Span::<Span::<felt252>>) -> Span::<bool> {
             let mut i: u32 = 0;
             let length = attestationId.len();
+            let mut resultArray = ArrayTrait::<bool>::new();
             loop {
                 if i == length {
                     break;
@@ -63,10 +66,12 @@ mod SAS {
                     revoked: false,
                     data: *data.at(i)
                 );
-            }
+                resultArray.append(self._call_receiver_hook_if_defined(*attestationId.at(i), *schemaId.at(i), false));
+            };
+            resultArray.span()
         }
 
-        fn notary_attest(ref self: ContractState, attestationId: felt252, schemaId: felt252, attesterSig: Signature, attester: ContractAddress, validUntil: u64, data: Span::<felt252>) {
+        fn notary_attest(ref self: ContractState, attestationId: felt252, schemaId: felt252, attesterSig: Signature, attester: ContractAddress, validUntil: u64, data: Span::<felt252>) -> bool {
             self._validate_attest_input_or_throw(attestationId, schemaId, validUntil);
             self._unsafe_attest(
                 attestationId: attestationId, 
@@ -78,11 +83,13 @@ mod SAS {
                 revoked: false,
                 data: data
             );
+            self._call_receiver_hook_if_defined(attestationId, schemaId, false)
         }
 
-        fn notary_attest_batch(ref self: ContractState, attestationId: Span::<felt252>, schemaId: Span::<felt252>, attesterSig: Span::<Signature>, attester: Span::<ContractAddress>, validUntil: Span::<u64>, data: Span::<Span::<felt252>>) {
+        fn notary_attest_batch(ref self: ContractState, attestationId: Span::<felt252>, schemaId: Span::<felt252>, attesterSig: Span::<Signature>, attester: Span::<ContractAddress>, validUntil: Span::<u64>, data: Span::<Span::<felt252>>) -> Span::<bool> {
             let mut i: u32 = 0;
             let length = attestationId.len();
+            let mut resultArray = ArrayTrait::<bool>::new();
             loop {
                 if i == length {
                     break;
@@ -98,24 +105,30 @@ mod SAS {
                     revoked: false,
                     data: *data.at(i)
                 );
-            }
+                resultArray.append(self._call_receiver_hook_if_defined(*attestationId.at(i), *schemaId.at(i), false));
+            };
+            resultArray.span()
         }
 
-        fn unattest(ref self: ContractState, attestationId: felt252, isCallerNotary: bool, attesterUnattestSig: Signature) {
+        fn unattest(ref self: ContractState, attestationId: felt252, isCallerNotary: bool, attesterUnattestSig: Signature) -> bool {
             self._validate_unattest_input_or_throw(attestationId, isCallerNotary);
             self._unsafe_unattest(attestationId, attesterUnattestSig);
+            self._call_receiver_hook_if_defined(attestationId, self.attestationMetadatas.read(attestationId).schemaId, false)
         }
 
-        fn unattest_batch(ref self: ContractState, attestationId: Span::<felt252>, isCallerNotary: Span::<bool>, attesterUnattestSig: Span::<Signature>) {
+        fn unattest_batch(ref self: ContractState, attestationId: Span::<felt252>, isCallerNotary: Span::<bool>, attesterUnattestSig: Span::<Signature>) -> Span::<bool> {
             let mut i: u32 = 0;
             let length = attestationId.len();
+            let mut resultArray = ArrayTrait::<bool>::new();
             loop {
                 if i == length {
                     break;
                 }
                 self._validate_unattest_input_or_throw(*attestationId.at(i), *isCallerNotary.at(i));
                 self._unsafe_unattest(*attestationId.at(i), *attesterUnattestSig.at(i));
-            }
+                resultArray.append(self._call_receiver_hook_if_defined(*attestationId.at(i), self.attestationMetadatas.read(*attestationId.at(i)).schemaId, true));
+            };
+            resultArray.span()
         }
 
         fn attest_offchain(ref self: ContractState, attestationId: felt252) {
@@ -132,7 +145,7 @@ mod SAS {
                 }
                 self._validate_offchain_attest_input_or_throw(*attestationId.at(i));
                 self._unsafe_offchain_attest(*attestationId.at(i));
-            }
+            };
         }
 
         fn unattest_offchain(ref self: ContractState, attestationId: felt252) {
@@ -149,7 +162,7 @@ mod SAS {
                 }
                 self._validate_offchain_unattest_input_or_throw(*attestationId.at(i));
                 self._unsafe_offchain_unattest(*attestationId.at(i));
-            }
+            };
         }
     }
 
@@ -226,6 +239,17 @@ mod SAS {
 
         fn _unsafe_offchain_unattest(ref self: ContractState, attestationId: felt252) {
             self.offchainDataTimestamps.write(attestationId, 0);
+        }
+
+        fn _call_receiver_hook_if_defined(ref self: ContractState, attestationId: felt252, schemaId: felt252, isRevoked: bool) -> bool {
+            let schema = self.schemas.read(schemaId);
+            let mut result = false;
+            if schema.hook.is_non_zero() {
+                result = ISASReceiverHookDispatcher { 
+                    contract_address: schema.hook 
+                }.didReceiveAttestation(attestationId, isRevoked)
+            }
+            result
         }
     }
 

@@ -4,12 +4,12 @@ use starknet::secp256_trait::Signature;
 #[starknet::interface]
 trait ISAS<TContractState> {
     // On-chain
-    fn self_attest(ref self: TContractState, attestationId: felt252, schemaId: felt252, validUntil: u64, data: Span::<felt252>);
-    fn self_attest_batch(ref self: TContractState, attestationId: Span::<felt252>, schemaId: Span::<felt252>, validUntil: Array::<u64>, data: Span::<Span::<felt252>>);
-    fn notary_attest(ref self: TContractState, attestationId: felt252, schemaId: felt252, attesterSig: Signature, attester: ContractAddress, validUntil: u64, data: Span::<felt252>);
-    fn notary_attest_batch(ref self: TContractState, attestationId: Span::<felt252>, schemaId: Span::<felt252>, attesterSig: Span::<Signature>, attester: Span::<ContractAddress>, validUntil: Span::<u64>, data: Span::<Span::<felt252>>);
-    fn unattest(ref self: TContractState, attestationId: felt252, isCallerNotary: bool, attesterUnattestSig: Signature);
-    fn unattest_batch(ref self: TContractState, attestationId: Span::<felt252>, isCallerNotary: Span::<bool>,  attesterUnattestSig:Span::<Signature>);
+    fn self_attest(ref self: TContractState, attestationId: felt252, schemaId: felt252, validUntil: u64, data: Span::<felt252>) -> bool;
+    fn self_attest_batch(ref self: TContractState, attestationId: Span::<felt252>, schemaId: Span::<felt252>, validUntil: Array::<u64>, data: Span::<Span::<felt252>>) -> Span::<bool>;
+    fn notary_attest(ref self: TContractState, attestationId: felt252, schemaId: felt252, attesterSig: Signature, attester: ContractAddress, validUntil: u64, data: Span::<felt252>) -> bool;
+    fn notary_attest_batch(ref self: TContractState, attestationId: Span::<felt252>, schemaId: Span::<felt252>, attesterSig: Span::<Signature>, attester: Span::<ContractAddress>, validUntil: Span::<u64>, data: Span::<Span::<felt252>>) -> Span::<bool>;
+    fn unattest(ref self: TContractState, attestationId: felt252, isCallerNotary: bool, attesterUnattestSig: Signature) -> bool;
+    fn unattest_batch(ref self: TContractState, attestationId: Span::<felt252>, isCallerNotary: Span::<bool>,  attesterUnattestSig:Span::<Signature>) -> Span::<bool>;
     // Off-chain
     fn attest_offchain(ref self: TContractState, attestationId: felt252);
     fn attest_offchain_batch(ref self: TContractState, attestationId: Span::<felt252>);
