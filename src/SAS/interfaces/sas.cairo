@@ -3,9 +3,9 @@ use starknet::secp256_trait::Signature;
 
 #[starknet::interface]
 trait ISAS<TContractState> {
-    fn self_attest(ref self: TContractState, attestationId: felt252, schemaId: felt252, validUntil: u64, data: Array::<felt252>);
-    fn self_attest_batch(ref self: TContractState, attestationId: Array::<felt252>, schemaId: Array::<felt252>, validUntil: Array::<u64>, data: Array::<Array::<felt252>>);
-    fn notary_attest(ref self: TContractState, attestationId: felt252, schemaId: felt252, attesterSig: Signature, attester: ContractAddress, validUntil: u64, data: Array::<felt252>);
+    fn self_attest(ref self: TContractState, attestationId: felt252, schemaId: felt252, validUntil: u64, data: Span::<felt252>);
+    fn self_attest_batch(ref self: TContractState, attestationId: Span::<felt252>, schemaId: Span::<felt252>, validUntil: Array::<u64>, data: Span::<Span::<felt252>>);
+    fn notary_attest(ref self: TContractState, attestationId: felt252, schemaId: felt252, attesterSig: Signature, attester: ContractAddress, validUntil: u64, data: Span::<felt252>);
 }
 
 mod SASErrors {
