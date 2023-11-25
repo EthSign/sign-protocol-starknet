@@ -1,9 +1,7 @@
 #[starknet::contract]
 mod SAS {
-    use core::array::ArrayTrait;
-mod interfaces;
+    mod interfaces;
     mod structs;
-
     use starknet::ContractAddress;
     use zeroable::Zeroable;
     use starknet::get_block_timestamp;
@@ -21,7 +19,7 @@ mod interfaces;
         schemas: LegacyMap::<felt252, Schema>,
         attestationMetadatas: LegacyMap::<felt252, AttestationMetadata>,
         attestationDatas: LegacyMap::<felt252, Span::<felt252>>,
-        dataTimestamps: LegacyMap::<felt252, u64>,
+        offchainDataTimestamps: LegacyMap::<felt252, u64>,
     }
 
     #[abi(embed_v0)]
@@ -35,7 +33,7 @@ mod interfaces;
     impl SASImpl of ISAS<ContractState> {
         fn self_attest(ref self: ContractState, attestationId: felt252, schemaId: felt252, validUntil: u64, data: Span::<felt252>) {
             self._validate_attest_input_or_throw(attestationId, schemaId, validUntil);
-            self._write_attestation_to_storage(
+            self._unsafe_attest(
                 attestationId: attestationId, 
                 attesterSig: _zero_signature(),
                 schemaId: schemaId,
@@ -55,7 +53,7 @@ mod interfaces;
                     break;
                 }
                 self._validate_attest_input_or_throw(*attestationId.at(i), *schemaId.at(i), *validUntil.at(i));
-                self._write_attestation_to_storage(
+                self._unsafe_attest(
                     attestationId: *attestationId.at(i), 
                     attesterSig: _zero_signature(),
                     schemaId: *schemaId.at(i),
@@ -70,7 +68,7 @@ mod interfaces;
 
         fn notary_attest(ref self: ContractState, attestationId: felt252, schemaId: felt252, attesterSig: Signature, attester: ContractAddress, validUntil: u64, data: Span::<felt252>) {
             self._validate_attest_input_or_throw(attestationId, schemaId, validUntil);
-            self._write_attestation_to_storage(
+            self._unsafe_attest(
                 attestationId: attestationId, 
                 attesterSig: attesterSig,
                 schemaId: schemaId,
@@ -82,7 +80,89 @@ mod interfaces;
             );
         }
 
+        fn notary_attest_batch(ref self: ContractState, attestationId: Span::<felt252>, schemaId: Span::<felt252>, attesterSig: Span::<Signature>, attester: Span::<ContractAddress>, validUntil: Span::<u64>, data: Span::<Span::<felt252>>) {
+            let mut i: u32 = 0;
+            let length = attestationId.len();
+            loop {
+                if i == length {
+                    break;
+                }
+                self._validate_attest_input_or_throw(*attestationId.at(i), *schemaId.at(i), *validUntil.at(i));
+                self._unsafe_attest(
+                    attestationId: *attestationId.at(i), 
+                    attesterSig: *attesterSig.at(i),
+                    schemaId: *schemaId.at(i),
+                    attester: *attester.at(i),
+                    notary: get_caller_address(),
+                    validUntil: *validUntil.at(i),
+                    revoked: false,
+                    data: *data.at(i)
+                );
+            }
+        }
 
+        fn unattest(ref self: ContractState, attestationId: felt252, isCallerNotary: bool, attesterUnattestSig: Signature) {
+            self._validate_unattest_input_or_throw(attestationId, isCallerNotary);
+            self._unsafe_unattest(attestationId, attesterUnattestSig);
+        }
+
+        fn unattest_batch(ref self: ContractState, attestationId: Span::<felt252>, isCallerNotary: Span::<bool>, attesterUnattestSig: Span::<Signature>) {
+            let mut i: u32 = 0;
+            let length = attestationId.len();
+            loop {
+                if i == length {
+                    break;
+                }
+                self._validate_unattest_input_or_throw(*attestationId.at(i), *isCallerNotary.at(i));
+                self._unsafe_unattest(*attestationId.at(i), *attesterUnattestSig.at(i));
+            }
+        }
+
+        fn attest_offchain(ref self: ContractState, attestationId: felt252) {
+            self._validate_offchain_attest_input_or_throw(attestationId);
+            self._unsafe_offchain_attest(attestationId);
+        }
+
+        fn attest_offchain_batch(ref self: ContractState, attestationId: Span::<felt252>) {
+            let mut i: u32 = 0;
+            let length = attestationId.len();
+            loop {
+                if i == length {
+                    break;
+                }
+                self._validate_offchain_attest_input_or_throw(*attestationId.at(i));
+                self._unsafe_offchain_attest(*attestationId.at(i));
+            }
+        }
+
+        fn unattest_offchain(ref self: ContractState, attestationId: felt252) {
+            self._validate_offchain_unattest_input_or_throw(attestationId);
+            self._unsafe_offchain_unattest(attestationId);
+        }
+
+        fn unattest_offchain_batch(ref self: ContractState, attestationId: Span::<felt252>) {
+            let mut i: u32 = 0;
+            let length = attestationId.len();
+            loop {
+                if i == length {
+                    break;
+                }
+                self._validate_offchain_unattest_input_or_throw(*attestationId.at(i));
+                self._unsafe_offchain_unattest(*attestationId.at(i));
+            }
+        }
+    }
+
+    #[abi(per_item)]
+    #[generate_trait]
+    impl SASView of ISASView {
+        fn get_onchain_attestation(self: @ContractState, attestationId: felt252) -> (AttestationMetadata, Span::<felt252>) {
+            (self.attestationMetadatas.read(attestationId), self.attestationDatas.read(attestationId))
+        }
+
+        fn get_offchain_attestation_timestamp(self: @ContractState, attestationId: felt252) -> u64 {
+            self.offchainDataTimestamps.read(attestationId)
+        }
     }
 
     #[generate_trait]
@@ -95,9 +175,11 @@ mod interfaces;
             assert(schema.maxValidFor < validUntil - get_block_timestamp(), SASErrors::ATTESTATION_INVALID_DURATION);
         }
 
-        fn _write_attestation_to_storage(ref self: ContractState, attestationId: felt252, attesterSig: Signature, schemaId: felt252, attester: ContractAddress, notary: ContractAddress, validUntil: u64, revoked: bool, data: Span::<felt252>) {
+        fn _unsafe_attest(ref self: ContractState, attestationId: felt252, attesterSig: Signature, schemaId: felt252, attester: ContractAddress, notary: ContractAddress, validUntil: u64, revoked: bool, data: Span::<felt252>) {
+            let attesterUnattestSig = _zero_signature();
             let newAttestationMetadata = AttestationMetadata { 
                 attesterSig,
+                attesterUnattestSig,
                 schemaId,
                 attester,
                 notary,
@@ -107,6 +189,44 @@ mod interfaces;
              self.attestationMetadatas.write(attestationId, newAttestationMetadata);
              self.attestationDatas.write(attestationId, data);
         }
+
+        fn _validate_unattest_input_or_throw(ref self: ContractState, attestationId: felt252, isCallerNotary: bool) {
+            let currentAttestationMetadata = self.attestationMetadatas.read(attestationId);
+            assert(currentAttestationMetadata.attester.is_non_zero(), SASErrors::ATTESTATION_ID_DOES_NOT_EXIST);
+            assert(!currentAttestationMetadata.revoked, SASErrors::ATTESTATION_ALREADY_REVOKED);
+            if isCallerNotary {
+                assert(currentAttestationMetadata.notary == get_caller_address(), SASErrors::CALLER_UNAUTHORIZED);
+            } else {
+                assert(currentAttestationMetadata.attester == get_caller_address(), SASErrors::CALLER_UNAUTHORIZED);
+            }
+            let schema = self.schemas.read(currentAttestationMetadata.schemaId);
+            assert(schema.revocable, SASErrors::SCHEMA_NOT_REVOCABLE);
+        }
+
+        fn _unsafe_unattest(ref self: ContractState, attestationId: felt252, attesterUnattestSig: Signature) {
+            let mut currentAttestationMetadata = self.attestationMetadatas.read(attestationId);
+            currentAttestationMetadata.revoked = true;
+            currentAttestationMetadata.attesterUnattestSig = attesterUnattestSig;
+            self.attestationMetadatas.write(attestationId, currentAttestationMetadata);
+        }
+
+        fn _validate_offchain_attest_input_or_throw(ref self: ContractState, attestationId: felt252) {
+            let currentOffchainDataTimestamp = self.offchainDataTimestamps.read(attestationId);
+            assert(currentOffchainDataTimestamp.is_zero(), SASErrors::ATTESTATION_ID_EXISTS);
+        }
+
+        fn _unsafe_offchain_attest(ref self: ContractState, attestationId: felt252) {
+            self.offchainDataTimestamps.write(attestationId, get_block_timestamp());
+        }
+
+        fn _validate_offchain_unattest_input_or_throw(ref self: ContractState, attestationId: felt252) {
+            let currentOffchainDataTimestamp = self.offchainDataTimestamps.read(attestationId);
+            assert(currentOffchainDataTimestamp.is_non_zero(), SASErrors::ATTESTATION_ID_DOES_NOT_EXIST);
+        }
+
+        fn _unsafe_offchain_unattest(ref self: ContractState, attestationId: felt252) {
+            self.offchainDataTimestamps.write(attestationId, 0);
+        }
     }
 
     fn _zero_signature() -> Signature {
@@ -115,8 +235,8 @@ mod interfaces;
 
 }
 
-// ===== Implementing arrays in storage =====
-// Source: https://starknet-by-example.voyager.online/ch02/storing_arrays.html?highlight=storing#storing-arrays
+// ===== Implementing Span in storage =====
+// Based on: https://starknet-by-example.voyager.online/ch02/storing_arrays.html?highlight=storing#storing-arrays
 use starknet::storage_access::Store;
 use starknet::storage_access::StorageBaseAddress;
 use starknet::syscalls::SyscallResult;
