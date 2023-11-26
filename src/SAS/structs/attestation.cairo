@@ -1,6 +1,6 @@
 use starknet::{ContractAddress, secp256_trait::Signature};
 
-#[derive(Drop, Serde, Copy, starknet::Store)]
+#[derive(PartialEq, Drop, Serde, Copy, starknet::Store)]
 struct AttestationMetadata {
     attesterSig: Signature,
     attesterRevokeSig: Signature,

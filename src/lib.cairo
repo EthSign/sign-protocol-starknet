@@ -33,6 +33,8 @@ mod SAS {
     };
     use super::StoreFelt252Span;
 
+    use debug::PrintTrait;
+
     #[storage]
     struct Storage {
         schemas: LegacyMap::<felt252, Schema>,
@@ -64,7 +66,7 @@ mod SAS {
             ref self: ContractState, 
             schemaId: felt252, 
             schema: felt252, 
-            dataLength: u256, 
+            dataLength: u32, 
             hook: ContractAddress, 
             revocable: bool, 
             maxValidFor: u64
@@ -103,7 +105,8 @@ mod SAS {
             self._validate_attest_input_or_throw(
                 attestationId, 
                 schemaId, 
-                validUntil
+                validUntil,
+                data.len()
             );
             self._unsafe_attest(
                 attestationId: attestationId, 
@@ -124,7 +127,7 @@ mod SAS {
             attestationId: Span::<felt252>, 
             schemaId: Span::<felt252>, 
             recipient: Span::<ContractAddress>, 
-            validUntil: Array::<u64>, 
+            validUntil: Span::<u64>, 
             data: Span::<Span::<felt252>>
         ) -> Span::<bool> {
             let mut i: u32 = 0;
@@ -137,7 +140,8 @@ mod SAS {
                 self._validate_attest_input_or_throw(
                     *attestationId.at(i), 
                     *schemaId.at(i), 
-                    *validUntil.at(i)
+                    *validUntil.at(i),
+                    (*data.at(i)).len()
                 );
                 self._unsafe_attest(
                     attestationId: *attestationId.at(i), 
@@ -157,6 +161,7 @@ mod SAS {
                         false
                     )
                 );
+                i += 1;
             };
             resultArray.span()
         }
@@ -174,7 +179,8 @@ mod SAS {
             self._validate_attest_input_or_throw(
                 attestationId, 
                 schemaId, 
-                validUntil
+                validUntil,
+                data.len()
             );
             self._unsafe_attest(
                 attestationId: attestationId, 
@@ -210,7 +216,8 @@ mod SAS {
                 self._validate_attest_input_or_throw(
                     *attestationId.at(i), 
                     *schemaId.at(i), 
-                    *validUntil.at(i)
+                    *validUntil.at(i),
+                    (*data.at(i)).len()
                 );
                 self._unsafe_attest(
                     attestationId: *attestationId.at(i), 
@@ -230,6 +237,7 @@ mod SAS {
                         false
                     )
                 );
+                i += 1;
             };
             resultArray.span()
         }
@@ -282,6 +290,7 @@ mod SAS {
                         true
                     )
                 );
+                i += 1;
             };
             resultArray.span()
         }
@@ -305,6 +314,7 @@ mod SAS {
                     *attestationId.at(i)
                 );
                 self._unsafe_offchain_attest(*attestationId.at(i));
+                i += 1;
             };
         }
 
@@ -327,13 +337,17 @@ mod SAS {
                     *attestationId.at(i)
                 );
                 self._unsafe_offchain_revoke(*attestationId.at(i));
+                i += 1;
             };
         }
-    }
 
-    #[abi(per_item)]
-    #[generate_trait]
-    impl SASView of ISASView {
+        fn get_schema(
+            self: @ContractState, 
+            schemaId: felt252
+        ) -> Schema {
+            self.schemas.read(schemaId)
+        }
+
         fn get_onchain_attestation(
             self: @ContractState, 
             attestationId: felt252
@@ -358,7 +372,8 @@ mod SAS {
             ref self: ContractState, 
             attestationId: felt252, 
             schemaId: felt252, 
-            validUntil: u64
+            validUntil: u64,
+            dataLength: u32
         ) {
             let attestationMetadata = self.attestationMetadatas.read(
                 attestationId
@@ -373,8 +388,12 @@ mod SAS {
                 SASErrors::SCHEMA_ID_DOES_NOT_EXIST
             );
             assert(
-                schema.maxValidFor < validUntil - get_block_timestamp(), 
+                schema.maxValidFor > validUntil - get_block_timestamp(), 
                 SASErrors::ATTESTATION_INVALID_DURATION
+            );
+            assert(
+                dataLength == schema.dataLength,
+                SASErrors::ATTESTATION_INVALID_DATA_LENGTH
             );
         }
 
