@@ -63,7 +63,7 @@ trait ISAS<TContractState> {
         ref self: TContractState, 
         attestation_id: Span::<felt252>, 
         is_caller_notary: Span::<bool>, 
-        attester_revoke_sig:Span::<Signature>
+        attester_revoke_sig: Span::<Signature>
     ) -> Span::<bool>;
     // Off-chain attestation
     fn attest_offchain(

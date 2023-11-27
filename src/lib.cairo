@@ -381,11 +381,11 @@ mod SAS {
             valid_until: u64,
             data_length: u32
         ) {
-            let attestationMetadata = self.attestation_metadatas.read(
+            let attestation_metadata = self.attestation_metadatas.read(
                 attestation_id
             );
             assert(
-                attestationMetadata.attester.is_zero(), 
+                attestation_metadata.attester.is_zero(), 
                 SASErrors::ATTESTATION_ID_EXISTS
             );
             let schema = self.schemas.read(schema_id);
@@ -416,7 +416,7 @@ mod SAS {
             data: Span::<felt252>
         ) {
             let attester_revoke_sig = _zero_signature();
-            let newAttestationMetadata = AttestationMetadata { 
+            let new_attestation_metadata = AttestationMetadata { 
                 attester_sig,
                 attester_revoke_sig,
                 schema_id,
@@ -428,7 +428,7 @@ mod SAS {
              };
              self.attestation_metadatas.write(
                 attestation_id, 
-                newAttestationMetadata
+                new_attestation_metadata
             );
              self.attestation_datas.write(attestation_id, data);
              self.emit(
@@ -449,30 +449,30 @@ mod SAS {
             attestation_id: felt252, 
             is_caller_notary: bool
         ) {
-            let attestationMetadata = self.attestation_metadatas.read(
+            let attestation_metadata = self.attestation_metadatas.read(
                 attestation_id
             );
             assert(
-                attestationMetadata.attester.is_non_zero(), 
+                attestation_metadata.attester.is_non_zero(), 
                 SASErrors::ATTESTATION_ID_DOES_NOT_EXIST
             );
             assert(
-                !attestationMetadata.revoked, 
+                !attestation_metadata.revoked, 
                 SASErrors::ATTESTATION_ALREADY_REVOKED
             );
             if is_caller_notary {
                 assert(
-                    attestationMetadata.notary == get_caller_address(), 
+                    attestation_metadata.notary == get_caller_address(), 
                     SASErrors::CALLER_UNAUTHORIZED
                 );
             } else {
                 assert(
-                    attestationMetadata.attester == get_caller_address(), 
+                    attestation_metadata.attester == get_caller_address(), 
                     SASErrors::CALLER_UNAUTHORIZED
                 );
             }
             let schema = self.schemas.read(
-                attestationMetadata.schema_id
+                attestation_metadata.schema_id
             );
             assert(schema.revocable, SASErrors::SCHEMA_NOT_REVOCABLE);
         }
@@ -482,23 +482,23 @@ mod SAS {
             attestation_id: felt252, 
             attester_revoke_sig: Signature
         ) {
-            let mut attestationMetadata = self.attestation_metadatas.read(
+            let mut attestation_metadata = self.attestation_metadatas.read(
                 attestation_id
             );
-            attestationMetadata.revoked = true;
-            attestationMetadata.attester_revoke_sig = attester_revoke_sig;
+            attestation_metadata.revoked = true;
+            attestation_metadata.attester_revoke_sig = attester_revoke_sig;
             self.attestation_metadatas.write(
                 attestation_id, 
-                attestationMetadata
+                attestation_metadata
             );
             self.emit(
                 Event::Revoked(
                     Revoked {
-                        attester: attestationMetadata.attester,
-                        notary: attestationMetadata.notary,
-                        recipient: attestationMetadata.recipient,
+                        attester: attestation_metadata.attester,
+                        notary: attestation_metadata.notary,
+                        recipient: attestation_metadata.recipient,
                         attestation_id: attestation_id,
-                        schema_id: attestationMetadata.schema_id
+                        schema_id: attestation_metadata.schema_id
                     }
                 )
             );
