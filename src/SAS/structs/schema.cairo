@@ -3,8 +3,8 @@ use starknet::ContractAddress;
 #[derive(PartialEq, Drop, Serde, Copy, starknet::Store)]
 struct Schema {
     schema: felt252,
-    dataLength: u32,
+    data_length: u32,
     hook: ContractAddress,
     revocable: bool,
-    maxValidFor: u64
+    max_valid_for: u64
 }

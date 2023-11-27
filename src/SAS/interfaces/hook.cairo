@@ -1,8 +1,8 @@
 #[starknet::interface]
 trait ISASReceiverHook<TContractState> {
-    fn didReceiveAttestation(
+    fn did_receive_attestation(
         ref self: TContractState, 
-        attestationId: felt252, 
-        isRevoked: bool
+        attestation_id: felt252, 
+        is_revoked: bool
     ) -> bool;
 } 

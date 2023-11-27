@@ -38,9 +38,9 @@ mod SAS {
     #[storage]
     struct Storage {
         schemas: LegacyMap::<felt252, Schema>,
-        attestationMetadatas: LegacyMap::<felt252, AttestationMetadata>,
-        attestationDatas: LegacyMap::<felt252, Span::<felt252>>,
-        offchainDataTimestamps: LegacyMap::<felt252, u64>,
+        attestation_metadatas: LegacyMap::<felt252, AttestationMetadata>,
+        attestation_datas: LegacyMap::<felt252, Span::<felt252>>,
+        offchain_data_timestamps: LegacyMap::<felt252, u64>,
     }
 
     #[event]
@@ -64,31 +64,31 @@ mod SAS {
     impl SASImpl of ISAS<ContractState> {
         fn register(
             ref self: ContractState, 
-            schemaId: felt252, 
+            schema_id: felt252, 
             schema: felt252, 
-            dataLength: u32, 
+            data_length: u32, 
             hook: ContractAddress, 
             revocable: bool, 
-            maxValidFor: u64
+            max_valid_for: u64
         ) {
-            let currentSchema = self.schemas.read(schemaId);
+            let current_schema = self.schemas.read(schema_id);
             assert(
-                currentSchema.schema.is_zero(), 
+                current_schema.schema.is_zero(), 
                 SASErrors::SCHEMA_ID_EXISTS
             );
             let newSchema = Schema {
                 schema,
-                dataLength,
+                data_length,
                 hook,
                 revocable,
-                maxValidFor
+                max_valid_for
             };
-            self.schemas.write(schemaId, newSchema);
+            self.schemas.write(schema_id, newSchema);
             self.emit(
                 Event::Registered(
                     Registered {
                         by: get_caller_address(),
-                        schemaId: schemaId
+                        schema_id: schema_id
                     }
                 )
             );
@@ -96,273 +96,279 @@ mod SAS {
 
         fn self_attest(
             ref self: ContractState, 
-            attestationId: felt252, 
-            schemaId: felt252, 
+            attestation_id: felt252, 
+            schema_id: felt252, 
             recipient: ContractAddress, 
-            validUntil: u64, 
+            valid_until: u64, 
             data: Span::<felt252>
         ) -> bool {
             self._validate_attest_input_or_throw(
-                attestationId, 
-                schemaId, 
-                validUntil,
+                attestation_id, 
+                schema_id, 
+                valid_until,
                 data.len()
             );
             self._unsafe_attest(
-                attestationId: attestationId, 
-                attesterSig: _zero_signature(),
-                schemaId: schemaId,
+                attestation_id: attestation_id, 
+                attester_sig: _zero_signature(),
+                schema_id: schema_id,
                 attester: get_caller_address(),
                 notary: Zeroable::zero(),
                 recipient: recipient,
-                validUntil: validUntil,
+                valid_until: valid_until,
                 revoked: false,
                 data: data
             );
-            self._call_receiver_hook_if_defined(attestationId, schemaId, false)
+            self._call_receiver_hook_if_defined(attestation_id, schema_id, false)
         }
 
         fn self_attest_batch(
             ref self: ContractState, 
-            attestationId: Span::<felt252>, 
-            schemaId: Span::<felt252>, 
+            attestation_id: Span::<felt252>, 
+            schema_id: Span::<felt252>, 
             recipient: Span::<ContractAddress>, 
-            validUntil: Span::<u64>, 
+            valid_until: Span::<u64>, 
             data: Span::<Span::<felt252>>
         ) -> Span::<bool> {
             let mut i: u32 = 0;
-            let length = attestationId.len();
-            let mut resultArray = ArrayTrait::<bool>::new();
+            let length = attestation_id.len();
+            let mut result_array = ArrayTrait::<bool>::new();
             loop {
                 if i == length {
                     break;
                 }
                 self._validate_attest_input_or_throw(
-                    *attestationId.at(i), 
-                    *schemaId.at(i), 
-                    *validUntil.at(i),
+                    *attestation_id.at(i), 
+                    *schema_id.at(i), 
+                    *valid_until.at(i),
                     (*data.at(i)).len()
                 );
                 self._unsafe_attest(
-                    attestationId: *attestationId.at(i), 
-                    attesterSig: _zero_signature(),
-                    schemaId: *schemaId.at(i),
+                    attestation_id: *attestation_id.at(i), 
+                    attester_sig: _zero_signature(),
+                    schema_id: *schema_id.at(i),
                     attester: get_caller_address(),
                     notary: Zeroable::zero(),
                     recipient: *recipient.at(i),
-                    validUntil: *validUntil.at(i),
+                    valid_until: *valid_until.at(i),
                     revoked: false,
                     data: *data.at(i)
                 );
-                resultArray.append(
+                result_array.append(
                     self._call_receiver_hook_if_defined(
-                        *attestationId.at(i), 
-                        *schemaId.at(i), 
+                        *attestation_id.at(i), 
+                        *schema_id.at(i), 
                         false
                     )
                 );
                 i += 1;
             };
-            resultArray.span()
+            result_array.span()
         }
 
         fn notary_attest(
             ref self: ContractState, 
-            attestationId: felt252, 
-            schemaId: felt252, 
-            attesterSig: Signature, 
+            attestation_id: felt252, 
+            schema_id: felt252, 
+            attester_sig: Signature, 
             attester: ContractAddress, 
             recipient: ContractAddress, 
-            validUntil: u64, 
+            valid_until: u64, 
             data: Span::<felt252>
         ) -> bool {
             self._validate_attest_input_or_throw(
-                attestationId, 
-                schemaId, 
-                validUntil,
+                attestation_id, 
+                schema_id, 
+                valid_until,
                 data.len()
             );
             self._unsafe_attest(
-                attestationId: attestationId, 
-                attesterSig: attesterSig,
-                schemaId: schemaId,
+                attestation_id: attestation_id, 
+                attester_sig: attester_sig,
+                schema_id: schema_id,
                 attester: attester,
                 notary: get_caller_address(),
                 recipient: recipient,
-                validUntil: validUntil,
+                valid_until: valid_until,
                 revoked: false,
                 data: data
             );
-            self._call_receiver_hook_if_defined(attestationId, schemaId, false)
+            self._call_receiver_hook_if_defined(attestation_id, schema_id, false)
         }
 
         fn notary_attest_batch(
             ref self: ContractState, 
-            attestationId: Span::<felt252>, 
-            schemaId: Span::<felt252>, 
-            attesterSig: Span::<Signature>, 
+            attestation_id: Span::<felt252>, 
+            schema_id: Span::<felt252>, 
+            attester_sig: Span::<Signature>, 
             attester: Span::<ContractAddress>, 
             recipient: Span::<ContractAddress>, 
-            validUntil: Span::<u64>, 
+            valid_until: Span::<u64>, 
             data: Span::<Span::<felt252>>
         ) -> Span::<bool> {
             let mut i: u32 = 0;
-            let length = attestationId.len();
-            let mut resultArray = ArrayTrait::<bool>::new();
+            let length = attestation_id.len();
+            let mut result_array = ArrayTrait::<bool>::new();
             loop {
                 if i == length {
                     break;
                 }
                 self._validate_attest_input_or_throw(
-                    *attestationId.at(i), 
-                    *schemaId.at(i), 
-                    *validUntil.at(i),
+                    *attestation_id.at(i), 
+                    *schema_id.at(i), 
+                    *valid_until.at(i),
                     (*data.at(i)).len()
                 );
                 self._unsafe_attest(
-                    attestationId: *attestationId.at(i), 
-                    attesterSig: *attesterSig.at(i),
-                    schemaId: *schemaId.at(i),
+                    attestation_id: *attestation_id.at(i), 
+                    attester_sig: *attester_sig.at(i),
+                    schema_id: *schema_id.at(i),
                     attester: *attester.at(i),
                     notary: get_caller_address(),
                     recipient: *recipient.at(i),
-                    validUntil: *validUntil.at(i),
+                    valid_until: *valid_until.at(i),
                     revoked: false,
                     data: *data.at(i)
                 );
-                resultArray.append(
+                result_array.append(
                     self._call_receiver_hook_if_defined(
-                        *attestationId.at(i), 
-                        *schemaId.at(i), 
+                        *attestation_id.at(i), 
+                        *schema_id.at(i), 
                         false
                     )
                 );
                 i += 1;
             };
-            resultArray.span()
+            result_array.span()
         }
 
         fn revoke(
             ref self: ContractState, 
-            attestationId: felt252, 
-            isCallerNotary: bool, 
-            attesterRevokeSig: Signature
+            attestation_id: felt252, 
+            is_caller_notary: bool, 
+            attester_revoke_sig: Signature
         ) -> bool {
             self._validate_revoke_input_or_throw(
-                attestationId, 
-                isCallerNotary
+                attestation_id, 
+                is_caller_notary
             );
-            self._unsafe_revoke(attestationId, attesterRevokeSig);
+            self._unsafe_revoke(attestation_id, attester_revoke_sig);
             self._call_receiver_hook_if_defined(
-                attestationId, 
-                self.attestationMetadatas.read(attestationId).schemaId, 
+                attestation_id, 
+                self.attestation_metadatas.read(attestation_id).schema_id, 
                 false
             )
         }
 
         fn revoke_batch(
             ref self: ContractState, 
-            attestationId: Span::<felt252>, 
-            isCallerNotary: Span::<bool>, 
-            attesterRevokeSig: Span::<Signature>
+            attestation_id: Span::<felt252>, 
+            is_caller_notary: Span::<bool>, 
+            attester_revoke_sig: Span::<Signature>
         ) -> Span::<bool> {
             let mut i: u32 = 0;
-            let length = attestationId.len();
-            let mut resultArray = ArrayTrait::<bool>::new();
+            let length = attestation_id.len();
+            let mut result_array = ArrayTrait::<bool>::new();
             loop {
                 if i == length {
                     break;
                 }
                 self._validate_revoke_input_or_throw(
-                    *attestationId.at(i), 
-                    *isCallerNotary.at(i)
+                    *attestation_id.at(i), 
+                    *is_caller_notary.at(i)
                 );
                 self._unsafe_revoke(
-                    *attestationId.at(i), 
-                    *attesterRevokeSig.at(i)
+                    *attestation_id.at(i), 
+                    *attester_revoke_sig.at(i)
                 );
-                resultArray.append(
+                result_array.append(
                     self._call_receiver_hook_if_defined(
-                        *attestationId.at(i), 
-                        self.attestationMetadatas.read(
-                            *attestationId.at(i)
-                        ).schemaId, 
+                        *attestation_id.at(i), 
+                        self.attestation_metadatas.read(
+                            *attestation_id.at(i)
+                        ).schema_id, 
                         true
                     )
                 );
                 i += 1;
             };
-            resultArray.span()
+            result_array.span()
         }
 
-        fn attest_offchain(ref self: ContractState, attestationId: felt252) {
-            self._validate_offchain_attest_input_or_throw(attestationId);
-            self._unsafe_offchain_attest(attestationId);
+        fn attest_offchain(
+            ref self: ContractState, 
+            attestation_id: felt252
+        ) {
+            self._validate_offchain_attest_input_or_throw(attestation_id);
+            self._unsafe_offchain_attest(attestation_id);
         }
 
         fn attest_offchain_batch(
             ref self: ContractState, 
-            attestationId: Span::<felt252>
+            attestation_id: Span::<felt252>
         ) {
             let mut i: u32 = 0;
-            let length = attestationId.len();
+            let length = attestation_id.len();
             loop {
                 if i == length {
                     break;
                 }
                 self._validate_offchain_attest_input_or_throw(
-                    *attestationId.at(i)
+                    *attestation_id.at(i)
                 );
-                self._unsafe_offchain_attest(*attestationId.at(i));
+                self._unsafe_offchain_attest(*attestation_id.at(i));
                 i += 1;
             };
         }
 
-        fn revoke_offchain(ref self: ContractState, attestationId: felt252) {
-            self._validate_offchain_revoke_input_or_throw(attestationId);
-            self._unsafe_offchain_revoke(attestationId);
+        fn revoke_offchain(
+            ref self: ContractState, 
+            attestation_id: felt252
+        ) {
+            self._validate_offchain_revoke_input_or_throw(attestation_id);
+            self._unsafe_offchain_revoke(attestation_id);
         }
 
         fn revoke_offchain_batch(
             ref self: ContractState, 
-            attestationId: Span::<felt252>
+            attestation_id: Span::<felt252>
         ) {
             let mut i: u32 = 0;
-            let length = attestationId.len();
+            let length = attestation_id.len();
             loop {
                 if i == length {
                     break;
                 }
                 self._validate_offchain_revoke_input_or_throw(
-                    *attestationId.at(i)
+                    *attestation_id.at(i)
                 );
-                self._unsafe_offchain_revoke(*attestationId.at(i));
+                self._unsafe_offchain_revoke(*attestation_id.at(i));
                 i += 1;
             };
         }
 
         fn get_schema(
             self: @ContractState, 
-            schemaId: felt252
+            schema_id: felt252
         ) -> Schema {
-            self.schemas.read(schemaId)
+            self.schemas.read(schema_id)
         }
 
         fn get_onchain_attestation(
             self: @ContractState, 
-            attestationId: felt252
+            attestation_id: felt252
         ) -> (AttestationMetadata, Span::<felt252>) {
             (
-                self.attestationMetadatas.read(attestationId), 
-                self.attestationDatas.read(attestationId)
+                self.attestation_metadatas.read(attestation_id), 
+                self.attestation_datas.read(attestation_id)
             )
         }
 
         fn get_offchain_attestation_timestamp(
             self: @ContractState, 
-            attestationId: felt252
+            attestation_id: felt252
         ) -> u64 {
-            self.offchainDataTimestamps.read(attestationId)
+            self.offchain_data_timestamps.read(attestation_id)
         }
     }
 
@@ -370,69 +376,69 @@ mod SAS {
     impl SASInternalFunctions of SASInternalFunctionsTrait {
         fn _validate_attest_input_or_throw(
             ref self: ContractState, 
-            attestationId: felt252, 
-            schemaId: felt252, 
-            validUntil: u64,
-            dataLength: u32
+            attestation_id: felt252, 
+            schema_id: felt252, 
+            valid_until: u64,
+            data_length: u32
         ) {
-            let attestationMetadata = self.attestationMetadatas.read(
-                attestationId
+            let attestationMetadata = self.attestation_metadatas.read(
+                attestation_id
             );
             assert(
                 attestationMetadata.attester.is_zero(), 
                 SASErrors::ATTESTATION_ID_EXISTS
             );
-            let schema = self.schemas.read(schemaId);
+            let schema = self.schemas.read(schema_id);
             assert(
                 schema.schema.is_non_zero(), 
                 SASErrors::SCHEMA_ID_DOES_NOT_EXIST
             );
             assert(
-                schema.maxValidFor > validUntil - get_block_timestamp(), 
+                schema.max_valid_for > valid_until - get_block_timestamp(), 
                 SASErrors::ATTESTATION_INVALID_DURATION
             );
             assert(
-                dataLength == schema.dataLength,
+                data_length == schema.data_length,
                 SASErrors::ATTESTATION_INVALID_DATA_LENGTH
             );
         }
 
         fn _unsafe_attest(
             ref self: ContractState, 
-            attestationId: felt252, 
-            attesterSig: Signature, 
-            schemaId: felt252, 
+            attestation_id: felt252, 
+            attester_sig: Signature, 
+            schema_id: felt252, 
             attester: ContractAddress, 
             notary: ContractAddress, 
             recipient: ContractAddress, 
-            validUntil: u64, 
+            valid_until: u64, 
             revoked: bool, 
             data: Span::<felt252>
         ) {
-            let attesterRevokeSig = _zero_signature();
+            let attester_revoke_sig = _zero_signature();
             let newAttestationMetadata = AttestationMetadata { 
-                attesterSig,
-                attesterRevokeSig,
-                schemaId,
+                attester_sig,
+                attester_revoke_sig,
+                schema_id,
                 attester,
                 notary,
                 recipient,
-                validUntil,
+                valid_until,
                 revoked
              };
-             self.attestationMetadatas.write(
-                attestationId, 
+             self.attestation_metadatas.write(
+                attestation_id, 
                 newAttestationMetadata
             );
-             self.attestationDatas.write(attestationId, data);
+             self.attestation_datas.write(attestation_id, data);
              self.emit(
                 Event::Attested(
                     Attested {
                         attester,
                         notary,
                         recipient,
-                        attestationId,
-                        schemaId
+                        attestation_id,
+                        schema_id
                     }
                 )
              );
@@ -440,11 +446,11 @@ mod SAS {
 
         fn _validate_revoke_input_or_throw(
             ref self: ContractState, 
-            attestationId: felt252, 
-            isCallerNotary: bool
+            attestation_id: felt252, 
+            is_caller_notary: bool
         ) {
-            let attestationMetadata = self.attestationMetadatas.read(
-                attestationId
+            let attestationMetadata = self.attestation_metadatas.read(
+                attestation_id
             );
             assert(
                 attestationMetadata.attester.is_non_zero(), 
@@ -454,7 +460,7 @@ mod SAS {
                 !attestationMetadata.revoked, 
                 SASErrors::ATTESTATION_ALREADY_REVOKED
             );
-            if isCallerNotary {
+            if is_caller_notary {
                 assert(
                     attestationMetadata.notary == get_caller_address(), 
                     SASErrors::CALLER_UNAUTHORIZED
@@ -466,23 +472,23 @@ mod SAS {
                 );
             }
             let schema = self.schemas.read(
-                attestationMetadata.schemaId
+                attestationMetadata.schema_id
             );
             assert(schema.revocable, SASErrors::SCHEMA_NOT_REVOCABLE);
         }
 
         fn _unsafe_revoke(
             ref self: ContractState, 
-            attestationId: felt252, 
-            attesterRevokeSig: Signature
+            attestation_id: felt252, 
+            attester_revoke_sig: Signature
         ) {
-            let mut attestationMetadata = self.attestationMetadatas.read(
-                attestationId
+            let mut attestationMetadata = self.attestation_metadatas.read(
+                attestation_id
             );
             attestationMetadata.revoked = true;
-            attestationMetadata.attesterRevokeSig = attesterRevokeSig;
-            self.attestationMetadatas.write(
-                attestationId, 
+            attestationMetadata.attester_revoke_sig = attester_revoke_sig;
+            self.attestation_metadatas.write(
+                attestation_id, 
                 attestationMetadata
             );
             self.emit(
@@ -491,8 +497,8 @@ mod SAS {
                         attester: attestationMetadata.attester,
                         notary: attestationMetadata.notary,
                         recipient: attestationMetadata.recipient,
-                        attestationId: attestationId,
-                        schemaId: attestationMetadata.schemaId
+                        attestation_id: attestation_id,
+                        schema_id: attestationMetadata.schema_id
                     }
                 )
             );
@@ -500,30 +506,30 @@ mod SAS {
 
         fn _validate_offchain_attest_input_or_throw(
             ref self: ContractState, 
-            attestationId: felt252
+            attestation_id: felt252
         ) {
-            let offchainDataTimestamp = self.offchainDataTimestamps.read(
-                attestationId
+            let offchain_data_timestamp = self.offchain_data_timestamps.read(
+                attestation_id
             );
             assert(
-                offchainDataTimestamp.is_zero(), 
+                offchain_data_timestamp.is_zero(), 
                 SASErrors::ATTESTATION_ID_EXISTS
             );
         }
 
         fn _unsafe_offchain_attest(
             ref self: ContractState, 
-            attestationId: felt252
+            attestation_id: felt252
         ) {
-            self.offchainDataTimestamps.write(
-                attestationId, 
+            self.offchain_data_timestamps.write(
+                attestation_id, 
                 get_block_timestamp()
             );
             self.emit(
                 Event::AttestedOffchain(
                     AttestedOffchain {
                         attester: get_caller_address(),
-                        attestationId: attestationId,
+                        attestation_id: attestation_id,
                         timestamp: get_block_timestamp()
                     }
                 )
@@ -532,27 +538,27 @@ mod SAS {
 
         fn _validate_offchain_revoke_input_or_throw(
             ref self: ContractState, 
-            attestationId: felt252
+            attestation_id: felt252
         ) {
-            let offchainDataTimestamp = self.offchainDataTimestamps.read(
-                attestationId
+            let offchain_data_timestamp = self.offchain_data_timestamps.read(
+                attestation_id
             );
             assert(
-                offchainDataTimestamp.is_non_zero(), 
+                offchain_data_timestamp.is_non_zero(), 
                 SASErrors::ATTESTATION_ID_DOES_NOT_EXIST
             );
         }
 
         fn _unsafe_offchain_revoke(
             ref self: ContractState, 
-            attestationId: felt252
+            attestation_id: felt252
         ) {
-            self.offchainDataTimestamps.write(attestationId, 0);
+            self.offchain_data_timestamps.write(attestation_id, 0);
             self.emit(
                 Event::RevokedOffchain(
                     RevokedOffchain {
                         attester: get_caller_address(),
-                        attestationId: attestationId,
+                        attestation_id: attestation_id,
                         timestamp: get_block_timestamp()
                     }
                 )
@@ -561,16 +567,16 @@ mod SAS {
 
         fn _call_receiver_hook_if_defined(
             ref self: ContractState, 
-            attestationId: felt252, 
-            schemaId: felt252, 
-            isRevoked: bool
+            attestation_id: felt252, 
+            schema_id: felt252, 
+            is_revoked: bool
         ) -> bool {
-            let schema = self.schemas.read(schemaId);
+            let schema = self.schemas.read(schema_id);
             let mut result = false;
             if schema.hook.is_non_zero() {
                 result = ISASReceiverHookDispatcher { 
                     contract_address: schema.hook 
-                }.didReceiveAttestation(attestationId, isRevoked)
+                }.did_receive_attestation(attestation_id, is_revoked)
             }
             result
         }

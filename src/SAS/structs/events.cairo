@@ -5,7 +5,7 @@ struct Registered {
     #[key]
     by: ContractAddress,
     #[key]
-    schemaId: felt252
+    schema_id: felt252
 }
 
 #[derive(Drop, starknet::Event)]
@@ -17,9 +17,9 @@ struct Attested {
     #[key]
     recipient: ContractAddress,
     #[key]
-    attestationId: felt252,
+    attestation_id: felt252,
     #[key]
-    schemaId: felt252
+    schema_id: felt252
 }
 
 #[derive(Drop, starknet::Event)]
@@ -31,9 +31,9 @@ struct Revoked {
     #[key]
     recipient: ContractAddress,
     #[key]
-    attestationId: felt252,
+    attestation_id: felt252,
     #[key]
-    schemaId: felt252
+    schema_id: felt252
 }
 
 #[derive(Drop, starknet::Event)]
@@ -41,7 +41,7 @@ struct AttestedOffchain {
     #[key]
     attester: ContractAddress,
     #[key]
-    attestationId: felt252,
+    attestation_id: felt252,
     #[key]
     timestamp: u64
 }
@@ -51,7 +51,7 @@ struct RevokedOffchain {
     #[key]
     attester: ContractAddress,
     #[key]
-    attestationId: felt252,
+    attestation_id: felt252,
     #[key]
     timestamp: u64
 }

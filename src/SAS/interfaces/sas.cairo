@@ -9,91 +9,91 @@ trait ISAS<TContractState> {
     // Schema registration
     fn register(
         ref self: TContractState, 
-        schemaId: felt252, 
+        schema_id: felt252, 
         schema: felt252, 
-        dataLength: u32, 
+        data_length: u32, 
         hook: ContractAddress, 
         revocable: bool, 
-        maxValidFor: u64
+        max_valid_for: u64
     );
     // On-chain attestation
     fn self_attest(
         ref self: TContractState, 
-        attestationId: felt252, 
-        schemaId: felt252, 
+        attestation_id: felt252, 
+        schema_id: felt252, 
         recipient: ContractAddress, 
-        validUntil: u64, 
+        valid_until: u64, 
         data: Span::<felt252>
     ) -> bool;
     fn self_attest_batch(
         ref self: TContractState, 
-        attestationId: Span::<felt252>, 
-        schemaId: Span::<felt252>, 
+        attestation_id: Span::<felt252>, 
+        schema_id: Span::<felt252>, 
         recipient: Span::<ContractAddress>, 
-        validUntil: Span::<u64>, 
+        valid_until: Span::<u64>, 
         data: Span::<Span::<felt252>>
     ) -> Span::<bool>;
     fn notary_attest(
         ref self: TContractState, 
-        attestationId: felt252, 
-        schemaId: felt252, 
-        attesterSig: Signature, 
+        attestation_id: felt252, 
+        schema_id: felt252, 
+        attester_sig: Signature, 
         attester: ContractAddress, 
         recipient: ContractAddress, 
-        validUntil: u64, 
+        valid_until: u64, 
         data: Span::<felt252>
     ) -> bool;
     fn notary_attest_batch(
         ref self: TContractState, 
-        attestationId: Span::<felt252>, 
-        schemaId: Span::<felt252>, 
-        attesterSig: Span::<Signature>, 
+        attestation_id: Span::<felt252>, 
+        schema_id: Span::<felt252>, 
+        attester_sig: Span::<Signature>, 
         attester: Span::<ContractAddress>, 
         recipient: Span::<ContractAddress>, 
-        validUntil: Span::<u64>, 
+        valid_until: Span::<u64>, 
         data: Span::<Span::<felt252>>
     ) -> Span::<bool>;
     fn revoke(
         ref self: TContractState, 
-        attestationId: felt252, 
-        isCallerNotary: bool, 
-        attesterRevokeSig: Signature
+        attestation_id: felt252, 
+        is_caller_notary: bool, 
+        attester_revoke_sig: Signature
     ) -> bool;
     fn revoke_batch(
         ref self: TContractState, 
-        attestationId: Span::<felt252>, 
-        isCallerNotary: Span::<bool>, 
-        attesterRevokeSig:Span::<Signature>
+        attestation_id: Span::<felt252>, 
+        is_caller_notary: Span::<bool>, 
+        attester_revoke_sig:Span::<Signature>
     ) -> Span::<bool>;
     // Off-chain attestation
     fn attest_offchain(
         ref self: TContractState, 
-        attestationId: felt252
+        attestation_id: felt252
     );
     fn attest_offchain_batch(
         ref self: TContractState, 
-        attestationId: Span::<felt252>
+        attestation_id: Span::<felt252>
     );
     fn revoke_offchain(
         ref self: TContractState, 
-        attestationId: felt252
+        attestation_id: felt252
     );
     fn revoke_offchain_batch(
         ref self: TContractState, 
-        attestationId: Span::<felt252>
+        attestation_id: Span::<felt252>
     );
     // View
     fn get_schema(
         self: @TContractState, 
-        schemaId: felt252
+        schema_id: felt252
     ) -> Schema;
     fn get_onchain_attestation(
         self: @TContractState, 
-        attestationId: felt252
+        attestation_id: felt252
     ) -> (AttestationMetadata, Span::<felt252>);
     fn get_offchain_attestation_timestamp(
         self: @TContractState, 
-        attestationId: felt252
+        attestation_id: felt252
     ) -> u64;
 }
 
