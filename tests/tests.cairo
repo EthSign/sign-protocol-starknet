@@ -1,8 +1,3 @@
-use core::option::OptionTrait;
-use core::traits::TryInto;
-use core::result::ResultTrait;
-use core::array::SpanTrait;
-use core::array::ArrayTrait;
 use starknet::{
     ContractAddress, 
     get_block_timestamp,
@@ -15,7 +10,6 @@ use snforge_std::{
     ContractClassTrait,
     test_address
 };
-use debug::PrintTrait;
 
 use starknet_attestation_service::SAS::{
     interfaces::sas::{
@@ -63,7 +57,9 @@ fn register_basic_schema(dispatcher: ISASSafeDispatcher) -> (felt252, Schema) {
     (schema_id, schema)
 }
 
-fn register_revocable_schema(dispatcher: ISASSafeDispatcher) -> (felt252, Schema) {
+fn register_revocable_schema(
+    dispatcher: ISASSafeDispatcher
+) -> (felt252, Schema) {
     let schema_id = 'testSId_revocable';
     let schema = Schema {
         schema: 'test schema data',

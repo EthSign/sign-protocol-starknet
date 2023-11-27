@@ -33,8 +33,6 @@ mod SAS {
     };
     use super::StoreFelt252Span;
 
-    use debug::PrintTrait;
-
     #[storage]
     struct Storage {
         schemas: LegacyMap::<felt252, Schema>,
@@ -119,7 +117,11 @@ mod SAS {
                 revoked: false,
                 data: data
             );
-            self._call_receiver_hook_if_defined(attestation_id, schema_id, false)
+            self._call_receiver_hook_if_defined(
+                attestation_id, 
+                schema_id, 
+                false
+            )
         }
 
         fn self_attest_batch(
@@ -193,7 +195,11 @@ mod SAS {
                 revoked: false,
                 data: data
             );
-            self._call_receiver_hook_if_defined(attestation_id, schema_id, false)
+            self._call_receiver_hook_if_defined(
+                attestation_id, 
+                schema_id, 
+                false
+            )
         }
 
         fn notary_attest_batch(
