@@ -97,6 +97,60 @@ trait ISAS<TContractState> {
     ) -> u64;
 }
 
+mod SASEvents {
+    #[derive(Drop, starknet::Event)]
+    struct Registered {
+        #[key]
+        by: super::ContractAddress,
+        #[key]
+        schema_id: felt252
+    }
+    #[derive(Drop, starknet::Event)]
+    struct Attested {
+        #[key]
+        attester: super::ContractAddress,
+        #[key]
+        notary: super::ContractAddress,
+        #[key]
+        recipient: super::ContractAddress,
+        #[key]
+        attestation_id: felt252,
+        #[key]
+        schema_id: felt252
+    }
+    #[derive(Drop, starknet::Event)]
+    struct Revoked {
+        #[key]
+        attester: super::ContractAddress,
+        #[key]
+        notary: super::ContractAddress,
+        #[key]
+        recipient: super::ContractAddress,
+        #[key]
+        attestation_id: felt252,
+        #[key]
+        schema_id: felt252
+    }
+    #[derive(Drop, starknet::Event)]
+    struct AttestedOffchain {
+        #[key]
+        attester: super::ContractAddress,
+        #[key]
+        attestation_id: felt252,
+        #[key]
+        timestamp: u64
+    }
+    #[derive(Drop, starknet::Event)]
+    struct RevokedOffchain {
+        #[key]
+        attester: super::ContractAddress,
+        #[key]
+        attestation_id: felt252,
+        #[key]
+        timestamp: u64
+    }
+}
+
 mod SASErrors {
     const CALLER_UNAUTHORIZED: felt252 = '00';
     const ATTESTATION_ID_EXISTS: felt252 = '10';
