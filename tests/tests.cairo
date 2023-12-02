@@ -1,3 +1,4 @@
+use debug::PrintTrait;
 use starknet::{
     ContractAddress, 
     get_block_timestamp,
@@ -8,7 +9,10 @@ use zeroable::Zeroable;
 use snforge_std::{
     declare, 
     ContractClassTrait,
-    test_address
+    test_address,
+    start_warp,
+    stop_warp,
+    CheatTarget,
 };
 
 use starknet_attestation_service::SAS::{
@@ -53,7 +57,7 @@ fn register_basic_schema(dispatcher: ISASSafeDispatcher) -> (felt252, Schema) {
         schema.hook, 
         schema.revocable, 
         schema.max_valid_for
-    );
+    ).unwrap();
     (schema_id, schema)
 }
 
@@ -75,7 +79,7 @@ fn register_revocable_schema(
         schema.hook, 
         schema.revocable, 
         schema.max_valid_for
-    );
+    ).unwrap();
     (schema_id, schema)
 }
 
@@ -106,7 +110,7 @@ fn register_test() {
         schema.hook, 
         schema.revocable, 
         schema.max_valid_for
-    );
+    ).unwrap();
     // Check if schema is properly stored
     assert(
         schema == dispatcher.get_schema(schema_id).unwrap(), 
@@ -145,7 +149,7 @@ fn self_attest_test() {
         recipient,
         valid_until,
         data
-    );
+    ).unwrap();
     // Check if data is properly stored
     let (metadata_, data_) = dispatcher.get_onchain_attestation(
         attestation_id
@@ -237,7 +241,7 @@ fn self_attest_batch_test() {
         recipient,
         valid_until,
         data
-    );
+    ).unwrap();
     // Check storage
     let mut i: u32 = 0;
     loop {
@@ -304,7 +308,7 @@ fn notary_attest_test() {
         recipient,
         valid_until,
         data
-    );
+    ).unwrap();
     // Checking storage
     let (metadata_, data_) = dispatcher.get_onchain_attestation(
         attestation_id
@@ -360,7 +364,7 @@ fn notary_attest_batch_test() {
         recipient,
         valid_until,
         data
-    );
+    ).unwrap();
     // Checking storage
         let mut i: u32 = 0;
     loop {
@@ -413,12 +417,12 @@ fn revoke_test() {
         recipient,
         valid_until,
         data
-    );
+    ).unwrap();
     dispatcher.revoke(
         attestation_id,
         true,
         attester_revoke_sig
-    );
+    ).unwrap();
     // Checking storage
     let (metadata_, _) = dispatcher.get_onchain_attestation(
         attestation_id
@@ -439,7 +443,7 @@ fn revoke_test() {
         recipient,
         valid_until,
         data
-    );
+    ).unwrap();
     match dispatcher.revoke(
         attestation_id1,
         true,
@@ -461,12 +465,12 @@ fn revoke_test() {
         recipient,
         valid_until,
         data
-    );
+    ).unwrap();
     dispatcher.revoke(
         attestation_id2,
         false,
         zero_signature()
-    );
+    ).unwrap();
     // Should panic if revoke a revoked attestation
     match dispatcher.revoke(
         attestation_id2,
@@ -514,38 +518,41 @@ fn revoke_batch_test() {
         recipient,
         valid_until,
         data
-    );
+    ).unwrap();
     dispatcher.revoke_batch(
         attestation_id,
         (array![true, true, true]).span(),
         attester_sig
-    );
+    ).unwrap();
 }
 
 #[test]
 fn attest_offchain_test() {
     let dispatcher = deploy_sas();
     let attestation_id = 'testAId';
+    start_warp(CheatTarget::All, 20);
     dispatcher.attest_offchain(attestation_id);
     let timestamp = dispatcher.get_offchain_attestation_timestamp(
         attestation_id
     ).unwrap();
     assert(timestamp == get_block_timestamp(), 'Should match');
+    stop_warp(CheatTarget::All);
 }
 
 #[test]
 fn attest_offchain_batch_test() {
     let dispatcher = deploy_sas();
     let attestation_id = (array!['id0', 'id1', 'id2']).span();
-    dispatcher.attest_offchain_batch(attestation_id);
+    dispatcher.attest_offchain_batch(attestation_id).unwrap();
 }
 
 #[test]
 fn revoke_offchain_test() {
     let dispatcher = deploy_sas();
     let attestation_id = 'testAId';
-    dispatcher.attest_offchain(attestation_id);
-    dispatcher.revoke_offchain(attestation_id);
+    start_warp(CheatTarget::All, 20);
+    dispatcher.attest_offchain(attestation_id).unwrap();
+    dispatcher.revoke_offchain(attestation_id).unwrap();
     let timestamp = dispatcher.get_offchain_attestation_timestamp(
         attestation_id
     ).unwrap();
@@ -559,16 +566,19 @@ fn revoke_offchain_test() {
             *data.at(0)
         )
     }
+    stop_warp(CheatTarget::All);
 }
 
 #[test]
 fn revoke_offchain_batch_test() {
     let dispatcher = deploy_sas();
     let attestation_id = (array!['id0', 'id1', 'id2']).span();
-    dispatcher.attest_offchain_batch(attestation_id);
-    dispatcher.revoke_offchain_batch(attestation_id);
+    start_warp(CheatTarget::All, 20);
+    dispatcher.attest_offchain_batch(attestation_id).unwrap();
+    dispatcher.revoke_offchain_batch(attestation_id).unwrap();
     let timestamp = dispatcher.get_offchain_attestation_timestamp(
         *attestation_id.at(2)
     ).unwrap();
     assert(timestamp == 0, 'Should be 0');
+    stop_warp(CheatTarget::All);
 }
