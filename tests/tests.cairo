@@ -222,74 +222,6 @@ fn self_attest_test() {
 }
 
 #[test]
-fn self_attest_batch_test() {
-    let dispatcher = deploy_sas();
-    let (_schema_id, schema) = register_basic_schema(dispatcher);
-    let attestation_id = (array!['id0', 'id1', 'id2']).span();
-    let schema_id = (array![_schema_id, _schema_id, _schema_id]).span();
-    let _recipient: ContractAddress = Zeroable::zero();
-    let recipient = (array![_recipient, _recipient, _recipient]).span();
-    let _valid_until = get_block_timestamp() + schema.max_valid_for - 1;
-    let valid_until = (array![_valid_until, _valid_until, _valid_until]).span();
-    let _data = (array!['0', '1', '2']).span();
-    let data = (array![_data, _data, _data]).span();
-    let data_with_wrong_length = (array![_data, _data]).span();
-    // Check if function call is successful
-    dispatcher.self_attest_batch(
-        attestation_id,
-        schema_id,
-        recipient,
-        valid_until,
-        data
-    ).unwrap();
-    // Check storage
-    let mut i: u32 = 0;
-    loop {
-        if (i == attestation_id.len()) {
-            break;
-        }
-        let metadata = AttestationMetadata {
-            attester_sig: zero_signature(),
-            attester_revoke_sig: zero_signature(),
-            schema_id: *schema_id.at(i),
-            attester: test_address(),
-            notary: Zeroable::zero(),
-            recipient: *recipient.at(i),
-            valid_until: *valid_until.at(i),
-            revoked: false
-        };
-        let (metadata_, data_) = dispatcher.get_onchain_attestation(
-            *attestation_id.at(i)
-        ).unwrap();
-        assert(
-            compare_attestations_with_data(
-                metadata, 
-                *data.at(i), 
-                metadata_, 
-                data_
-            ), 
-            'Attestations should match'
-        );
-        i += 1;
-    };
-    // Check inconsistent input length
-    let attestation_id1 = (array!['id3', 'id4', 'id5']).span();
-    match dispatcher.self_attest_batch(
-        attestation_id1,
-        schema_id,
-        recipient,
-        valid_until,
-        data_with_wrong_length
-    ) {
-        Result::Ok(_) => {},
-        Result::Err(data) => assert(
-            *data.at(0) == 'Index out of bounds', 
-            ''
-        )
-    }
-}
-
-#[test]
 fn notary_attest_test() {
     let dispatcher = deploy_sas();
     let (schema_id, schema) = register_basic_schema(dispatcher);
@@ -330,71 +262,6 @@ fn notary_attest_test() {
         'Attestations should match'
     );
     // The other checks are already done in self_attest_test
-}
-
-#[test]
-fn notary_attest_batch_test() {
-    let dispatcher = deploy_sas();
-    let (_schema_id, schema) = register_basic_schema(dispatcher);
-    let attestation_id = (array!['id0', 'id1', 'id2']).span();
-    let attester_sig = (array![
-        Signature { r: 1, s: 1, y_parity: true }, 
-        Signature { r: 2, s: 2, y_parity: true }, 
-        Signature { r: 3, s: 3, y_parity: true }
-    ]).span();
-    let attester0: ContractAddress = 123.try_into().unwrap();
-    let attester = (array![
-        attester0, 
-        456.try_into().unwrap(), 
-        789.try_into().unwrap()
-    ]).span();
-    let schema_id = (array![_schema_id, _schema_id, _schema_id]).span();
-    let _recipient: ContractAddress = Zeroable::zero();
-    let recipient = (array![_recipient, _recipient, _recipient]).span();
-    let _valid_until = get_block_timestamp() + schema.max_valid_for - 1;
-    let valid_until = (array![_valid_until, _valid_until, _valid_until]).span();
-    let _data = (array!['0', '1', '2']).span();
-    let data = (array![_data, _data, _data]).span();
-    // Check if function call is successful
-    dispatcher.notary_attest_batch(
-        attestation_id,
-        schema_id,
-        attester_sig,
-        attester,
-        recipient,
-        valid_until,
-        data
-    ).unwrap();
-    // Checking storage
-        let mut i: u32 = 0;
-    loop {
-        if (i == attestation_id.len()) {
-            break;
-        }
-        let metadata = AttestationMetadata {
-            attester_sig: *attester_sig.at(i),
-            attester_revoke_sig: zero_signature(),
-            schema_id: *schema_id.at(i),
-            attester: *attester.at(i),
-            notary: test_address(),
-            recipient: *recipient.at(i),
-            valid_until: *valid_until.at(i),
-            revoked: false
-        };
-        let (metadata_, data_) = dispatcher.get_onchain_attestation(
-            *attestation_id.at(i)
-        ).unwrap();
-        assert(
-            compare_attestations_with_data(
-                metadata, 
-                *data.at(i), 
-                metadata_, 
-                data_
-            ), 
-            'Attestations should match'
-        );
-        i += 1;
-    };
 }
 
 #[test]
@@ -488,45 +355,6 @@ fn revoke_test() {
 }
 
 #[test]
-fn revoke_batch_test() {
-    let dispatcher = deploy_sas();
-    let (_schema_id, schema) = register_revocable_schema(dispatcher);
-    let attestation_id = (array!['id0', 'id1', 'id2']).span();
-    let attester_sig = (array![
-        Signature { r: 1, s: 1, y_parity: true }, 
-        Signature { r: 2, s: 2, y_parity: true }, 
-        Signature { r: 3, s: 3, y_parity: true }
-    ]).span();
-    let attester0: ContractAddress = 123.try_into().unwrap();
-    let attester = (array![
-        attester0, 
-        456.try_into().unwrap(), 
-        789.try_into().unwrap()
-    ]).span();
-    let schema_id = (array![_schema_id, _schema_id, _schema_id]).span();
-    let _recipient: ContractAddress = Zeroable::zero();
-    let recipient = (array![_recipient, _recipient, _recipient]).span();
-    let _valid_until = get_block_timestamp() + schema.max_valid_for - 1;
-    let valid_until = (array![_valid_until, _valid_until, _valid_until]).span();
-    let _data = (array!['0', '1', '2']).span();
-    let data = (array![_data, _data, _data]).span();
-    dispatcher.notary_attest_batch(
-        attestation_id,
-        schema_id,
-        attester_sig,
-        attester,
-        recipient,
-        valid_until,
-        data
-    ).unwrap();
-    dispatcher.revoke_batch(
-        attestation_id,
-        (array![true, true, true]).span(),
-        attester_sig
-    ).unwrap();
-}
-
-#[test]
 fn attest_offchain_test() {
     let dispatcher = deploy_sas();
     let attestation_id = 'testAId';
@@ -537,13 +365,6 @@ fn attest_offchain_test() {
     ).unwrap();
     assert(timestamp == get_block_timestamp(), 'Should match');
     stop_warp(CheatTarget::All);
-}
-
-#[test]
-fn attest_offchain_batch_test() {
-    let dispatcher = deploy_sas();
-    let attestation_id = (array!['id0', 'id1', 'id2']).span();
-    dispatcher.attest_offchain_batch(attestation_id).unwrap();
 }
 
 #[test]
@@ -566,19 +387,5 @@ fn revoke_offchain_test() {
             *data.at(0)
         )
     }
-    stop_warp(CheatTarget::All);
-}
-
-#[test]
-fn revoke_offchain_batch_test() {
-    let dispatcher = deploy_sas();
-    let attestation_id = (array!['id0', 'id1', 'id2']).span();
-    start_warp(CheatTarget::All, 20);
-    dispatcher.attest_offchain_batch(attestation_id).unwrap();
-    dispatcher.revoke_offchain_batch(attestation_id).unwrap();
-    let timestamp = dispatcher.get_offchain_attestation_timestamp(
-        *attestation_id.at(2)
-    ).unwrap();
-    assert(timestamp == 0, 'Should be 0');
     stop_warp(CheatTarget::All);
 }
