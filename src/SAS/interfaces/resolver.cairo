@@ -1,5 +1,5 @@
 #[starknet::interface]
-trait ISASReceiverHook<TContractState> {
+trait ISASResolver<TContractState> {
     fn did_receive_attestation(
         ref self: TContractState, 
         attestation_id: felt252, 

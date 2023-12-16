@@ -11,17 +11,17 @@ trait ISAS<TContractState> {
         ref self: TContractState, 
         schema_id: felt252, 
         schema: felt252, 
-        hook: ContractAddress, 
+        resolver: ContractAddress, 
         revocable: bool, 
         max_valid_for: u64,
-        revert_if_hook_failed: bool,
+        revert_if_resolver_failed: bool,
     );
     // On-chain attestation
     fn self_attest(
         ref self: TContractState, 
         attestation_id: felt252, 
         schema_id: felt252, 
-        recipient: ContractAddress, 
+        resolver: ContractAddress, 
         valid_until: u64, 
         data: Span::<felt252>
     ) -> bool;
@@ -32,7 +32,7 @@ trait ISAS<TContractState> {
         schema_id: felt252, 
         attester_sig: Signature, 
         attester: ContractAddress, 
-        recipient: ContractAddress, 
+        resolver: ContractAddress, 
         valid_until: u64, 
         data: Span::<felt252>
     ) -> bool;
@@ -87,7 +87,7 @@ mod SASEvents {
         #[key]
         notary: super::ContractAddress,
         #[key]
-        recipient: super::ContractAddress,
+        resolver: super::ContractAddress,
         #[key]
         attestation_id: felt252,
         #[key]
@@ -100,7 +100,7 @@ mod SASEvents {
         #[key]
         notary: super::ContractAddress,
         #[key]
-        recipient: super::ContractAddress,
+        resolver: super::ContractAddress,
         #[key]
         attestation_id: felt252,
         #[key]

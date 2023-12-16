@@ -27,9 +27,9 @@ mod SAS {
                 RevokedOffchain
             },
         }, 
-        hook::{
-            ISASReceiverHookDispatcher, 
-            ISASReceiverHookDispatcherTrait
+        resolver::{
+            ISASResolverDispatcher, 
+            ISASResolverDispatcherTrait
         }
     };
     use felt252span::StoreFelt252Span;
@@ -65,10 +65,10 @@ mod SAS {
             ref self: ContractState, 
             schema_id: felt252, 
             schema: felt252, 
-            hook: ContractAddress, 
+            resolver: ContractAddress, 
             revocable: bool, 
             max_valid_for: u64,
-            revert_if_hook_failed: bool,
+            revert_if_resolver_failed: bool,
         ) {
             let current_schema = self.schemas.read(schema_id);
             assert(
@@ -77,10 +77,10 @@ mod SAS {
             );
             let newSchema = Schema {
                 schema,
-                hook,
+                resolver,
                 revocable,
                 max_valid_for,
-                revert_if_hook_failed,
+                revert_if_resolver_failed,
             };
             self.schemas.write(schema_id, newSchema);
             self.emit(
@@ -97,7 +97,7 @@ mod SAS {
             ref self: ContractState, 
             attestation_id: felt252, 
             schema_id: felt252, 
-            recipient: ContractAddress, 
+            resolver: ContractAddress, 
             valid_until: u64, 
             data: Span::<felt252>
         ) -> bool {
@@ -112,12 +112,12 @@ mod SAS {
                 schema_id: schema_id,
                 attester: get_caller_address(),
                 notary: Zeroable::zero(),
-                recipient: recipient,
+                resolver: resolver,
                 valid_until: valid_until,
                 revoked: false,
                 data: data
             );
-            self._call_receiver_hook_if_defined(
+            self._call_receiver_resolver_if_defined(
                 attestation_id, 
                 schema_id, 
                 false
@@ -130,7 +130,7 @@ mod SAS {
             schema_id: felt252, 
             attester_sig: Signature, 
             attester: ContractAddress, 
-            recipient: ContractAddress, 
+            resolver: ContractAddress, 
             valid_until: u64, 
             data: Span::<felt252>
         ) -> bool {
@@ -145,12 +145,12 @@ mod SAS {
                 schema_id: schema_id,
                 attester: attester,
                 notary: get_caller_address(),
-                recipient: recipient,
+                resolver: resolver,
                 valid_until: valid_until,
                 revoked: false,
                 data: data
             );
-            self._call_receiver_hook_if_defined(
+            self._call_receiver_resolver_if_defined(
                 attestation_id, 
                 schema_id, 
                 false
@@ -168,7 +168,7 @@ mod SAS {
                 is_caller_notary
             );
             self._unsafe_revoke(attestation_id, attester_revoke_sig);
-            self._call_receiver_hook_if_defined(
+            self._call_receiver_resolver_if_defined(
                 attestation_id, 
                 self.attestation_metadatas.read(attestation_id).schema_id, 
                 false
@@ -249,7 +249,7 @@ mod SAS {
             schema_id: felt252, 
             attester: ContractAddress, 
             notary: ContractAddress, 
-            recipient: ContractAddress, 
+            resolver: ContractAddress, 
             valid_until: u64, 
             revoked: bool, 
             data: Span::<felt252>
@@ -261,7 +261,7 @@ mod SAS {
                 schema_id,
                 attester,
                 notary,
-                recipient,
+                resolver,
                 valid_until,
                 revoked
              };
@@ -275,7 +275,7 @@ mod SAS {
                     Attested {
                         attester,
                         notary,
-                        recipient,
+                        resolver,
                         attestation_id,
                         schema_id
                     }
@@ -335,7 +335,7 @@ mod SAS {
                     Revoked {
                         attester: attestation_metadata.attester,
                         notary: attestation_metadata.notary,
-                        recipient: attestation_metadata.recipient,
+                        resolver: attestation_metadata.resolver,
                         attestation_id: attestation_id,
                         schema_id: attestation_metadata.schema_id
                     }
@@ -404,7 +404,7 @@ mod SAS {
              );
         }
 
-        fn _call_receiver_hook_if_defined(
+        fn _call_receiver_resolver_if_defined(
             ref self: ContractState, 
             attestation_id: felt252, 
             schema_id: felt252, 
@@ -412,11 +412,11 @@ mod SAS {
         ) -> bool {
             let schema = self.schemas.read(schema_id);
             let mut result = false;
-            if schema.hook.is_non_zero() {
-                result = ISASReceiverHookDispatcher { 
-                    contract_address: schema.hook 
+            if schema.resolver.is_non_zero() {
+                result = ISASResolverDispatcher { 
+                    contract_address: schema.resolver 
                 }.did_receive_attestation(attestation_id, is_revoked);
-                if schema.revert_if_hook_failed && !result {
+                if schema.revert_if_resolver_failed && !result {
                     panic_with_felt252(SASErrors::RECIPIENT_RETURNED_FALSE);
                 }
             }

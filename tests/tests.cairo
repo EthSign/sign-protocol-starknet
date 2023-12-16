@@ -45,18 +45,18 @@ fn register_basic_schema(dispatcher: ISASSafeDispatcher) -> (felt252, Schema) {
     let schema_id = 'testSId';
     let schema = Schema {
         schema: 'test schema data',
-        hook: Zeroable::zero(),
+        resolver: Zeroable::zero(),
         revocable: false,
         max_valid_for: 1000,
-        revert_if_hook_failed: false,
+        revert_if_resolver_failed: false,
     };
     dispatcher.register(
         schema_id,
         schema.schema, 
-        schema.hook, 
+        schema.resolver, 
         schema.revocable, 
         schema.max_valid_for,
-        schema.revert_if_hook_failed,
+        schema.revert_if_resolver_failed,
     ).unwrap();
     (schema_id, schema)
 }
@@ -67,18 +67,18 @@ fn register_revocable_schema(
     let schema_id = 'testSId_revocable';
     let schema = Schema {
         schema: 'test schema data',
-        hook: Zeroable::zero(),
+        resolver: Zeroable::zero(),
         revocable: true,
         max_valid_for: 1000,
-        revert_if_hook_failed: false,
+        revert_if_resolver_failed: false,
     };
     dispatcher.register(
         schema_id,
         schema.schema, 
-        schema.hook, 
+        schema.resolver, 
         schema.revocable, 
         schema.max_valid_for,
-        schema.revert_if_hook_failed,
+        schema.revert_if_resolver_failed,
     ).unwrap();
     (schema_id, schema)
 }
@@ -98,18 +98,18 @@ fn register_test() {
     let schema_id = 'testId';
     let schema = Schema {
         schema: 'test schema data',
-        hook: Zeroable::zero(),
+        resolver: Zeroable::zero(),
         revocable: false,
         max_valid_for: 0,
-        revert_if_hook_failed: false,
+        revert_if_resolver_failed: false,
     };
     dispatcher.register(
         schema_id,
         schema.schema,  
-        schema.hook, 
+        schema.resolver, 
         schema.revocable, 
         schema.max_valid_for,
-        schema.revert_if_hook_failed,
+        schema.revert_if_resolver_failed,
     ).unwrap();
     // Check if schema is properly stored
     assert(
@@ -120,10 +120,10 @@ fn register_test() {
     match dispatcher.register(
         schema_id,
         schema.schema, 
-        schema.hook, 
+        schema.resolver, 
         schema.revocable, 
         schema.max_valid_for,
-        schema.revert_if_hook_failed,
+        schema.revert_if_resolver_failed,
     ) {
         Result::Ok(_) => panic_with_felt252(
             'Should panic - 0'
@@ -139,14 +139,14 @@ fn self_attest_test() {
     let dispatcher = deploy_sas();
     let (schema_id, schema) = register_basic_schema(dispatcher);
     let attestation_id = 'testAId';
-    let recipient: ContractAddress = Zeroable::zero();
+    let resolver: ContractAddress = Zeroable::zero();
     let valid_until = get_block_timestamp();
     let data = (array!['0', '1', '22']).span();
     // Check if function call is successful
     dispatcher.self_attest(
         attestation_id,
         schema_id,
-        recipient,
+        resolver,
         valid_until,
         data
     ).unwrap();
@@ -160,7 +160,7 @@ fn self_attest_test() {
         schema_id: schema_id,
         attester: test_address(),
         notary: Zeroable::zero(),
-        recipient: recipient,
+        resolver: resolver,
         valid_until: valid_until,
         revoked: false
     };
@@ -174,7 +174,7 @@ fn self_attest_test() {
     match dispatcher.self_attest(
         attestation_id,
         schema_id,
-        recipient,
+        resolver,
         valid_until,
         data
     ) {
@@ -191,7 +191,7 @@ fn self_attest_test() {
     match dispatcher.self_attest(
         attestation_id1,
         schema_id,
-        recipient,
+        resolver,
         invalidValidUntil,
         data
     ) {
@@ -208,7 +208,7 @@ fn self_attest_test() {
     match dispatcher.self_attest(
         attestation_id1,
         invalidSchemaId,
-        recipient,
+        resolver,
         valid_until,
         data
     ) {
@@ -228,7 +228,7 @@ fn notary_attest_test() {
     let attestation_id = 'testAId';
     let attester: ContractAddress = 123.try_into().unwrap();
     let attester_sig = Signature { r: 1, s: 1, y_parity: true };
-    let recipient: ContractAddress = Zeroable::zero();
+    let resolver: ContractAddress = Zeroable::zero();
     let valid_until = get_block_timestamp();
     let data = (array!['0', '1', '22']).span();
     // Check if function call is successful
@@ -237,7 +237,7 @@ fn notary_attest_test() {
         schema_id,
         attester_sig,
         attester,
-        recipient,
+        resolver,
         valid_until,
         data
     ).unwrap();
@@ -251,7 +251,7 @@ fn notary_attest_test() {
         schema_id: schema_id,
         attester: attester,
         notary: test_address(),
-        recipient: recipient,
+        resolver: resolver,
         valid_until: valid_until,
         revoked: false
     };
@@ -273,7 +273,7 @@ fn revoke_test() {
     let attester: ContractAddress = 123.try_into().unwrap();
     let attester_sig = Signature { r: 1, s: 1, y_parity: true };
     let attester_revoke_sig = Signature { r: 3, s: 3, y_parity: true };
-    let recipient: ContractAddress = Zeroable::zero();
+    let resolver: ContractAddress = Zeroable::zero();
     let valid_until = get_block_timestamp();
     let data = (array!['0', '1', '22']).span();
     dispatcher.notary_attest(
@@ -281,7 +281,7 @@ fn revoke_test() {
         schema_id,
         attester_sig,
         attester,
-        recipient,
+        resolver,
         valid_until,
         data
     ).unwrap();
@@ -307,7 +307,7 @@ fn revoke_test() {
         schema_id1,
         attester_sig,
         attester,
-        recipient,
+        resolver,
         valid_until,
         data
     ).unwrap();
@@ -329,7 +329,7 @@ fn revoke_test() {
     dispatcher.self_attest(
         attestation_id2,
         schema_id,
-        recipient,
+        resolver,
         valid_until,
         data
     ).unwrap();
