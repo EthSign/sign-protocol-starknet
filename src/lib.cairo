@@ -65,10 +65,10 @@ mod SAS {
             ref self: ContractState, 
             schema_id: felt252, 
             schema: felt252, 
-            data_length: u32, 
             hook: ContractAddress, 
             revocable: bool, 
-            max_valid_for: u64
+            max_valid_for: u64,
+            revert_if_hook_failed: bool,
         ) {
             let current_schema = self.schemas.read(schema_id);
             assert(
@@ -77,10 +77,10 @@ mod SAS {
             );
             let newSchema = Schema {
                 schema,
-                data_length,
                 hook,
                 revocable,
-                max_valid_for
+                max_valid_for,
+                revert_if_hook_failed,
             };
             self.schemas.write(schema_id, newSchema);
             self.emit(
@@ -105,7 +105,6 @@ mod SAS {
                 attestation_id, 
                 schema_id, 
                 valid_until,
-                data.len()
             );
             self._unsafe_attest(
                 attestation_id: attestation_id, 
@@ -139,7 +138,6 @@ mod SAS {
                 attestation_id, 
                 schema_id, 
                 valid_until,
-                data.len()
             );
             self._unsafe_attest(
                 attestation_id: attestation_id, 
@@ -225,7 +223,6 @@ mod SAS {
             attestation_id: felt252, 
             schema_id: felt252, 
             valid_until: u64,
-            data_length: u32
         ) {
             let attestation_metadata = self.attestation_metadatas.read(
                 attestation_id
@@ -242,10 +239,6 @@ mod SAS {
             assert(
                 schema.max_valid_for > valid_until - get_block_timestamp(), 
                 SASErrors::ATTESTATION_INVALID_DURATION
-            );
-            assert(
-                data_length == schema.data_length,
-                SASErrors::ATTESTATION_INVALID_DATA_LENGTH
             );
         }
 
@@ -422,7 +415,10 @@ mod SAS {
             if schema.hook.is_non_zero() {
                 result = ISASReceiverHookDispatcher { 
                     contract_address: schema.hook 
-                }.did_receive_attestation(attestation_id, is_revoked)
+                }.did_receive_attestation(attestation_id, is_revoked);
+                if schema.revert_if_hook_failed && !result {
+                    panic_with_felt252(SASErrors::RECIPIENT_RETURNED_FALSE);
+                }
             }
             result
         }

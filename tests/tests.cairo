@@ -45,18 +45,18 @@ fn register_basic_schema(dispatcher: ISASSafeDispatcher) -> (felt252, Schema) {
     let schema_id = 'testSId';
     let schema = Schema {
         schema: 'test schema data',
-        data_length: 3,
         hook: Zeroable::zero(),
         revocable: false,
-        max_valid_for: 1000
+        max_valid_for: 1000,
+        revert_if_hook_failed: false,
     };
     dispatcher.register(
         schema_id,
         schema.schema, 
-        schema.data_length, 
         schema.hook, 
         schema.revocable, 
-        schema.max_valid_for
+        schema.max_valid_for,
+        schema.revert_if_hook_failed,
     ).unwrap();
     (schema_id, schema)
 }
@@ -67,18 +67,18 @@ fn register_revocable_schema(
     let schema_id = 'testSId_revocable';
     let schema = Schema {
         schema: 'test schema data',
-        data_length: 3,
         hook: Zeroable::zero(),
         revocable: true,
-        max_valid_for: 1000
+        max_valid_for: 1000,
+        revert_if_hook_failed: false,
     };
     dispatcher.register(
         schema_id,
         schema.schema, 
-        schema.data_length, 
         schema.hook, 
         schema.revocable, 
-        schema.max_valid_for
+        schema.max_valid_for,
+        schema.revert_if_hook_failed,
     ).unwrap();
     (schema_id, schema)
 }
@@ -98,18 +98,18 @@ fn register_test() {
     let schema_id = 'testId';
     let schema = Schema {
         schema: 'test schema data',
-        data_length: 1,
         hook: Zeroable::zero(),
         revocable: false,
-        max_valid_for: 0
+        max_valid_for: 0,
+        revert_if_hook_failed: false,
     };
     dispatcher.register(
         schema_id,
-        schema.schema, 
-        schema.data_length, 
+        schema.schema,  
         schema.hook, 
         schema.revocable, 
-        schema.max_valid_for
+        schema.max_valid_for,
+        schema.revert_if_hook_failed,
     ).unwrap();
     // Check if schema is properly stored
     assert(
@@ -120,10 +120,10 @@ fn register_test() {
     match dispatcher.register(
         schema_id,
         schema.schema, 
-        schema.data_length, 
         schema.hook, 
         schema.revocable, 
-        schema.max_valid_for
+        schema.max_valid_for,
+        schema.revert_if_hook_failed,
     ) {
         Result::Ok(_) => panic_with_felt252(
             'Should panic - 0'

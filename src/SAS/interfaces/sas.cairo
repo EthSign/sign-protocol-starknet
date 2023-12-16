@@ -11,10 +11,10 @@ trait ISAS<TContractState> {
         ref self: TContractState, 
         schema_id: felt252, 
         schema: felt252, 
-        data_length: u32, 
         hook: ContractAddress, 
         revocable: bool, 
-        max_valid_for: u64
+        max_valid_for: u64,
+        revert_if_hook_failed: bool,
     );
     // On-chain attestation
     fn self_attest(
@@ -127,13 +127,13 @@ mod SASEvents {
 }
 
 mod SASErrors {
-    const CALLER_UNAUTHORIZED: felt252 = '00';
-    const ATTESTATION_ID_EXISTS: felt252 = '10';
-    const ATTESTATION_ID_DOES_NOT_EXIST: felt252 = '11';
-    const ATTESTATION_INVALID_DURATION: felt252 = '12';
-    const ATTESTATION_ALREADY_REVOKED: felt252 = '13';
-    const ATTESTATION_INVALID_DATA_LENGTH: felt252 = '14';
-    const SCHEMA_ID_EXISTS: felt252 = '20';
-    const SCHEMA_ID_DOES_NOT_EXIST: felt252 = '21';
-    const SCHEMA_NOT_REVOCABLE: felt252 = '22';
+    const CALLER_UNAUTHORIZED: felt252 = 'CALLER_UNAUTHORIZED';
+    const ATTESTATION_ID_EXISTS: felt252 = 'ATTESTATION_ID_EXISTS';
+    const ATTESTATION_ID_DOES_NOT_EXIST: felt252 = 'ATTESTATION_ID_DOES_NOT_EXIST';
+    const ATTESTATION_INVALID_DURATION: felt252 = 'ATTESTATION_INVALID_DURATION';
+    const ATTESTATION_ALREADY_REVOKED: felt252 = 'ATTESTATION_ALREADY_REVOKED';
+    const SCHEMA_ID_EXISTS: felt252 = 'SCHEMA_ID_EXISTS';
+    const SCHEMA_ID_DOES_NOT_EXIST: felt252 = 'SCHEMA_ID_DOES_NOT_EXIST';
+    const SCHEMA_NOT_REVOCABLE: felt252 = 'SCHEMA_NOT_REVOCABLE';
+    const RECIPIENT_RETURNED_FALSE: felt252 = 'RECIPIENT_RETURNED_FALSE';
 }
