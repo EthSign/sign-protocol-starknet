@@ -17,7 +17,7 @@ trait ISAS<TContractState> {
         revert_if_resolver_failed: bool,
     );
     // On-chain attestation
-    fn self_attest(
+    fn attest(
         ref self: TContractState, 
         attestation_id: felt252,
         schema_id: felt252, 

@@ -135,7 +135,7 @@ fn register_test() {
 }
 
 #[test]
-fn self_attest_test() {
+fn attest_test() {
     let dispatcher = deploy_sas();
     let (schema_id, schema) = register_basic_schema(dispatcher);
     let attestation_id = 'testAId';
@@ -143,7 +143,7 @@ fn self_attest_test() {
     let valid_until = get_block_timestamp();
     let data = (array!['0', '1', '22']).span();
     // Check if function call is successful
-    dispatcher.self_attest(
+    dispatcher.attest(
         attestation_id,
         schema_id,
         recipient,
@@ -168,7 +168,7 @@ fn self_attest_test() {
         'Attestations should match'
     );
     // Duplicate attestation_id, should panic
-    match dispatcher.self_attest(
+    match dispatcher.attest(
         attestation_id,
         schema_id,
         recipient,
@@ -185,7 +185,7 @@ fn self_attest_test() {
     // Invalid duration, should panic
     let attestation_id1 = 'testAId1';
     let invalidValidUntil = get_block_timestamp() + schema.max_valid_for;
-    match dispatcher.self_attest(
+    match dispatcher.attest(
         attestation_id1,
         schema_id,
         recipient,
@@ -202,7 +202,7 @@ fn self_attest_test() {
     // Invalid schema_id, should panic
     // Reusing attestation_id1 since it panicked
     let invalidSchemaId = 'aijsdncfoiawun';
-    match dispatcher.self_attest(
+    match dispatcher.attest(
         attestation_id1,
         invalidSchemaId,
         recipient,
@@ -229,7 +229,7 @@ fn revoke_test() {
     let data = (array!['0', '1', '22']).span();
     // Revoking a self attestation
     let attestation_id2 = 'testAId2';
-    dispatcher.self_attest(
+    dispatcher.attest(
         attestation_id2,
         schema_id,
         recipient,

@@ -93,7 +93,7 @@ mod SAS {
             );
         }
 
-        fn self_attest(
+        fn attest(
             ref self: ContractState, 
             attestation_id: felt252, 
             schema_id: felt252, 
