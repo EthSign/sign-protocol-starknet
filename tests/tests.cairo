@@ -148,7 +148,9 @@ fn attest_test() {
         schema_id,
         recipient,
         valid_until,
-        data
+        data,
+        Zeroable::zero(),
+        0,
     ).unwrap();
     // Check if data is properly stored
     let (metadata_, data_) = dispatcher.get_onchain_attestation(
@@ -173,7 +175,9 @@ fn attest_test() {
         schema_id,
         recipient,
         valid_until,
-        data
+        data,
+        Zeroable::zero(),
+        0,
     ) {
         Result::Ok(_) => panic_with_felt252(
             'Should panic - 0'
@@ -190,7 +194,9 @@ fn attest_test() {
         schema_id,
         recipient,
         invalidValidUntil,
-        data
+        data,
+        Zeroable::zero(),
+        0,
     ) {
         Result::Ok(_) => panic_with_felt252(
             'Should panic - 1'
@@ -207,7 +213,9 @@ fn attest_test() {
         invalidSchemaId,
         recipient,
         valid_until,
-        data
+        data,
+        Zeroable::zero(),
+        0,
     ) {
         Result::Ok(_) => panic_with_felt252(
             'Should panic - 2'
@@ -234,14 +242,20 @@ fn revoke_test() {
         schema_id,
         recipient,
         valid_until,
-        data
+        data,
+        Zeroable::zero(),
+        0,
     ).unwrap();
     dispatcher.revoke(
         attestation_id2,
+        Zeroable::zero(),
+        0,
     ).unwrap();
     // Should panic if revoke a revoked attestation
     match dispatcher.revoke(
         attestation_id2,
+        Zeroable::zero(),
+        0,
     ) {
         Result::Ok(_) => panic_with_felt252(
             'Should panic'

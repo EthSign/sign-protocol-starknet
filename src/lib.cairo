@@ -55,7 +55,7 @@ mod SAS {
     #[abi(embed_v0)]
     impl SASVersion of IVersionable<ContractState> {
         fn version(self: @ContractState) -> felt252 {
-            '0.1.0'
+            '1.0.0'
         }
     }
 
@@ -99,7 +99,9 @@ mod SAS {
             schema_id: felt252, 
             recipient: ContractAddress, 
             valid_until: u64, 
-            data: Span::<felt252>
+            data: Span::<felt252>,
+            resolver_fee_token: ContractAddress,
+            resolver_fee_amount: u256,
         ) -> bool {
             self._validate_attest_input_or_throw(
                 attestation_id, 
@@ -118,13 +120,17 @@ mod SAS {
             self._call_receiver_resolver_if_defined(
                 attestation_id, 
                 schema_id, 
-                false
+                false,
+                resolver_fee_token,
+                resolver_fee_amount,
             )
         }
 
         fn revoke(
             ref self: ContractState, 
             attestation_id: felt252, 
+            resolver_fee_token: ContractAddress,
+            resolver_fee_amount: u256,
         ) -> bool {
             self._validate_revoke_input_or_throw(
                 attestation_id,
@@ -133,7 +139,9 @@ mod SAS {
             self._call_receiver_resolver_if_defined(
                 attestation_id, 
                 self.attestation_metadatas.read(attestation_id).schema_id, 
-                false
+                false,
+                resolver_fee_token,
+                resolver_fee_amount,
             )
         }
 
@@ -353,14 +361,21 @@ mod SAS {
             ref self: ContractState, 
             attestation_id: felt252, 
             schema_id: felt252, 
-            is_revoked: bool
+            is_revoked: bool,
+            resolver_fee_token: ContractAddress,
+            resolver_fee_amount: u256,
         ) -> bool {
             let schema = self.schemas.read(schema_id);
             let mut result = false;
             if schema.resolver.is_non_zero() {
                 result = ISASResolverDispatcher { 
                     contract_address: schema.resolver 
-                }.did_receive_attestation(attestation_id, is_revoked);
+                }.did_receive_attestation(
+                    attestation_id, 
+                    is_revoked, 
+                    resolver_fee_token, 
+                    resolver_fee_amount
+                );
                 if schema.revert_if_resolver_failed && !result {
                     panic_with_felt252(SASErrors::RESOLVER_RETURNED_FALSE);
                 }

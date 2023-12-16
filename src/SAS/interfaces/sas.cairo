@@ -23,12 +23,16 @@ trait ISAS<TContractState> {
         schema_id: felt252, 
         recipient: ContractAddress, 
         valid_until: u64, 
-        data: Span::<felt252>
+        data: Span::<felt252>,
+        resolver_fee_token: ContractAddress,
+        resolver_fee_amount: u256,
     ) -> bool;
 
     fn revoke(
         ref self: TContractState, 
         attestation_id: felt252,
+        resolver_fee_token: ContractAddress,
+        resolver_fee_amount: u256,
     ) -> bool;
 
     // Off-chain attestation
