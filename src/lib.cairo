@@ -108,43 +108,8 @@ mod SAS {
             );
             self._unsafe_attest(
                 attestation_id: attestation_id, 
-                attester_sig: _zero_signature(),
                 schema_id: schema_id,
                 attester: get_caller_address(),
-                notary: Zeroable::zero(),
-                recipient: recipient,
-                valid_until: valid_until,
-                revoked: false,
-                data: data
-            );
-            self._call_receiver_resolver_if_defined(
-                attestation_id, 
-                schema_id, 
-                false
-            )
-        }
-
-        fn notary_attest(
-            ref self: ContractState, 
-            attestation_id: felt252, 
-            schema_id: felt252, 
-            attester_sig: Signature, 
-            attester: ContractAddress, 
-            recipient: ContractAddress, 
-            valid_until: u64, 
-            data: Span::<felt252>
-        ) -> bool {
-            self._validate_attest_input_or_throw(
-                attestation_id, 
-                schema_id, 
-                valid_until,
-            );
-            self._unsafe_attest(
-                attestation_id: attestation_id, 
-                attester_sig: attester_sig,
-                schema_id: schema_id,
-                attester: attester,
-                notary: get_caller_address(),
                 recipient: recipient,
                 valid_until: valid_until,
                 revoked: false,
@@ -160,14 +125,11 @@ mod SAS {
         fn revoke(
             ref self: ContractState, 
             attestation_id: felt252, 
-            is_caller_notary: bool, 
-            attester_revoke_sig: Signature
         ) -> bool {
             self._validate_revoke_input_or_throw(
-                attestation_id, 
-                is_caller_notary
+                attestation_id,
             );
-            self._unsafe_revoke(attestation_id, attester_revoke_sig);
+            self._unsafe_revoke(attestation_id);
             self._call_receiver_resolver_if_defined(
                 attestation_id, 
                 self.attestation_metadatas.read(attestation_id).schema_id, 
@@ -245,10 +207,8 @@ mod SAS {
         fn _unsafe_attest(
             ref self: ContractState, 
             attestation_id: felt252, 
-            attester_sig: Signature, 
             schema_id: felt252, 
             attester: ContractAddress, 
-            notary: ContractAddress, 
             recipient: ContractAddress, 
             valid_until: u64, 
             revoked: bool, 
@@ -256,11 +216,8 @@ mod SAS {
         ) {
             let attester_revoke_sig = _zero_signature();
             let new_attestation_metadata = AttestationMetadata { 
-                attester_sig,
-                attester_revoke_sig,
                 schema_id,
                 attester,
-                notary,
                 recipient,
                 valid_until,
                 revoked
@@ -274,7 +231,6 @@ mod SAS {
                 Event::Attested(
                     Attested {
                         attester,
-                        notary,
                         recipient,
                         attestation_id,
                         schema_id
@@ -285,8 +241,7 @@ mod SAS {
 
         fn _validate_revoke_input_or_throw(
             ref self: ContractState, 
-            attestation_id: felt252, 
-            is_caller_notary: bool
+            attestation_id: felt252,
         ) {
             let attestation_metadata = self.attestation_metadatas.read(
                 attestation_id
@@ -299,17 +254,10 @@ mod SAS {
                 !attestation_metadata.revoked, 
                 SASErrors::ATTESTATION_ALREADY_REVOKED
             );
-            if is_caller_notary {
-                assert(
-                    attestation_metadata.notary == get_caller_address(), 
-                    SASErrors::CALLER_UNAUTHORIZED
-                );
-            } else {
-                assert(
-                    attestation_metadata.attester == get_caller_address(), 
-                    SASErrors::CALLER_UNAUTHORIZED
-                );
-            }
+            assert(
+                attestation_metadata.attester == get_caller_address(), 
+                SASErrors::CALLER_UNAUTHORIZED
+            );
             let schema = self.schemas.read(
                 attestation_metadata.schema_id
             );
@@ -318,14 +266,12 @@ mod SAS {
 
         fn _unsafe_revoke(
             ref self: ContractState, 
-            attestation_id: felt252, 
-            attester_revoke_sig: Signature
+            attestation_id: felt252,
         ) {
             let mut attestation_metadata = self.attestation_metadatas.read(
                 attestation_id
             );
             attestation_metadata.revoked = true;
-            attestation_metadata.attester_revoke_sig = attester_revoke_sig;
             self.attestation_metadatas.write(
                 attestation_id, 
                 attestation_metadata
@@ -334,7 +280,6 @@ mod SAS {
                 Event::Revoked(
                     Revoked {
                         attester: attestation_metadata.attester,
-                        notary: attestation_metadata.notary,
                         recipient: attestation_metadata.recipient,
                         attestation_id: attestation_id,
                         schema_id: attestation_metadata.schema_id
@@ -417,7 +362,7 @@ mod SAS {
                     contract_address: schema.resolver 
                 }.did_receive_attestation(attestation_id, is_revoked);
                 if schema.revert_if_resolver_failed && !result {
-                    panic_with_felt252(SASErrors::RECIPIENT_RETURNED_FALSE);
+                    panic_with_felt252(SASErrors::RESOLVER_RETURNED_FALSE);
                 }
             }
             result

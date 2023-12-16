@@ -155,11 +155,8 @@ fn self_attest_test() {
         attestation_id
     ).unwrap();
     let metadata = AttestationMetadata {
-        attester_sig: zero_signature(),
-        attester_revoke_sig: zero_signature(),
         schema_id: schema_id,
         attester: test_address(),
-        notary: Zeroable::zero(),
         recipient: recipient,
         valid_until: valid_until,
         revoked: false
@@ -222,108 +219,14 @@ fn self_attest_test() {
 }
 
 #[test]
-fn notary_attest_test() {
-    let dispatcher = deploy_sas();
-    let (schema_id, schema) = register_basic_schema(dispatcher);
-    let attestation_id = 'testAId';
-    let attester: ContractAddress = 123.try_into().unwrap();
-    let attester_sig = Signature { r: 1, s: 1, y_parity: true };
-    let recipient: ContractAddress = Zeroable::zero();
-    let valid_until = get_block_timestamp();
-    let data = (array!['0', '1', '22']).span();
-    // Check if function call is successful
-    dispatcher.notary_attest(
-        attestation_id,
-        schema_id,
-        attester_sig,
-        attester,
-        recipient,
-        valid_until,
-        data
-    ).unwrap();
-    // Checking storage
-    let (metadata_, data_) = dispatcher.get_onchain_attestation(
-        attestation_id
-    ).unwrap();
-    let metadata = AttestationMetadata {
-        attester_sig: attester_sig,
-        attester_revoke_sig: zero_signature(),
-        schema_id: schema_id,
-        attester: attester,
-        notary: test_address(),
-        recipient: recipient,
-        valid_until: valid_until,
-        revoked: false
-    };
-    assert(
-        compare_attestations_with_data(
-            metadata, data, metadata_, data_
-        ), 
-        'Attestations should match'
-    );
-    // The other checks are already done in self_attest_test
-}
-
-#[test]
 fn revoke_test() {
-    // Revoking a notary attestation
     let dispatcher = deploy_sas();
     let (schema_id, schema) = register_revocable_schema(dispatcher);
     let attestation_id = 'testAId';
     let attester: ContractAddress = 123.try_into().unwrap();
-    let attester_sig = Signature { r: 1, s: 1, y_parity: true };
-    let attester_revoke_sig = Signature { r: 3, s: 3, y_parity: true };
     let recipient: ContractAddress = Zeroable::zero();
     let valid_until = get_block_timestamp();
     let data = (array!['0', '1', '22']).span();
-    dispatcher.notary_attest(
-        attestation_id,
-        schema_id,
-        attester_sig,
-        attester,
-        recipient,
-        valid_until,
-        data
-    ).unwrap();
-    dispatcher.revoke(
-        attestation_id,
-        true,
-        attester_revoke_sig
-    ).unwrap();
-    // Checking storage
-    let (metadata_, _) = dispatcher.get_onchain_attestation(
-        attestation_id
-    ).unwrap();
-    assert(
-        metadata_.attester_revoke_sig == attester_revoke_sig &&
-        metadata_.revoked, 
-        'Data should match'
-    );
-    // Should panic if using irrevocable schema
-    let attestation_id1 = 'testAId1';
-    let (schema_id1, schema1) = register_basic_schema(dispatcher);
-    dispatcher.notary_attest(
-        attestation_id1,
-        schema_id1,
-        attester_sig,
-        attester,
-        recipient,
-        valid_until,
-        data
-    ).unwrap();
-    match dispatcher.revoke(
-        attestation_id1,
-        true,
-        attester_revoke_sig
-    ) {
-        Result::Ok(_) => panic_with_felt252(
-            'Should panic'
-        ),
-        Result::Err(data) => assert(
-            *data.at(0) == SASErrors::SCHEMA_NOT_REVOCABLE, 
-            *data.at(0)
-        )
-    }
     // Revoking a self attestation
     let attestation_id2 = 'testAId2';
     dispatcher.self_attest(
@@ -335,14 +238,10 @@ fn revoke_test() {
     ).unwrap();
     dispatcher.revoke(
         attestation_id2,
-        false,
-        zero_signature()
     ).unwrap();
     // Should panic if revoke a revoked attestation
     match dispatcher.revoke(
         attestation_id2,
-        false,
-        zero_signature()
     ) {
         Result::Ok(_) => panic_with_felt252(
             'Should panic'

@@ -19,19 +19,8 @@ trait ISAS<TContractState> {
     // On-chain attestation
     fn self_attest(
         ref self: TContractState, 
-        attestation_id: felt252, 
+        attestation_id: felt252,
         schema_id: felt252, 
-        recipient: ContractAddress, 
-        valid_until: u64, 
-        data: Span::<felt252>
-    ) -> bool;
-
-    fn notary_attest(
-        ref self: TContractState, 
-        attestation_id: felt252, 
-        schema_id: felt252, 
-        attester_sig: Signature, 
-        attester: ContractAddress, 
         recipient: ContractAddress, 
         valid_until: u64, 
         data: Span::<felt252>
@@ -39,9 +28,7 @@ trait ISAS<TContractState> {
 
     fn revoke(
         ref self: TContractState, 
-        attestation_id: felt252, 
-        is_caller_notary: bool, 
-        attester_revoke_sig: Signature
+        attestation_id: felt252,
     ) -> bool;
 
     // Off-chain attestation
@@ -85,8 +72,6 @@ mod SASEvents {
         #[key]
         attester: super::ContractAddress,
         #[key]
-        notary: super::ContractAddress,
-        #[key]
         recipient: super::ContractAddress,
         #[key]
         attestation_id: felt252,
@@ -97,8 +82,6 @@ mod SASEvents {
     struct Revoked {
         #[key]
         attester: super::ContractAddress,
-        #[key]
-        notary: super::ContractAddress,
         #[key]
         recipient: super::ContractAddress,
         #[key]
@@ -135,5 +118,5 @@ mod SASErrors {
     const SCHEMA_ID_EXISTS: felt252 = 'SCHEMA_ID_EXISTS';
     const SCHEMA_ID_DOES_NOT_EXIST: felt252 = 'SCHEMA_ID_DOES_NOT_EXIST';
     const SCHEMA_NOT_REVOCABLE: felt252 = 'SCHEMA_NOT_REVOCABLE';
-    const RECIPIENT_RETURNED_FALSE: felt252 = 'RECIPIENT_RETURNED_FALSE';
+    const RESOLVER_RETURNED_FALSE: felt252 = 'RESOLVER_RETURNED_FALSE';
 }
