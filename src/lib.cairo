@@ -28,8 +28,8 @@ mod SAS {
             },
         }, 
         resolver::{
-            ISASResolverDispatcher, 
-            ISASResolverDispatcherTrait
+            ISASResolverSafeDispatcher, 
+            ISASResolverSafeDispatcherTrait
         }
     };
     use felt252span::StoreFelt252Span;
@@ -68,7 +68,6 @@ mod SAS {
             resolver: ContractAddress, 
             revocable: bool, 
             max_valid_for: u64,
-            revert_if_resolver_failed: bool,
         ) {
             let current_schema = self.schemas.read(schema_id);
             assert(
@@ -80,7 +79,6 @@ mod SAS {
                 resolver,
                 revocable,
                 max_valid_for,
-                revert_if_resolver_failed,
             };
             self.schemas.write(schema_id, newSchema);
             self.emit(
@@ -102,7 +100,7 @@ mod SAS {
             data: Span::<felt252>,
             resolver_fee_token: ContractAddress,
             resolver_fee_amount: u256,
-        ) -> bool {
+        ) {
             self._validate_attest_input_or_throw(
                 attestation_id, 
                 schema_id, 
@@ -131,7 +129,7 @@ mod SAS {
             attestation_id: felt252, 
             resolver_fee_token: ContractAddress,
             resolver_fee_amount: u256,
-        ) -> bool {
+        ){
             self._validate_revoke_input_or_throw(
                 attestation_id,
             );
@@ -364,23 +362,21 @@ mod SAS {
             is_revoked: bool,
             resolver_fee_token: ContractAddress,
             resolver_fee_amount: u256,
-        ) -> bool {
+        ) {
             let schema = self.schemas.read(schema_id);
-            let mut result = false;
             if schema.resolver.is_non_zero() {
-                result = ISASResolverDispatcher { 
+                match (ISASResolverSafeDispatcher { 
                     contract_address: schema.resolver 
                 }.did_receive_attestation(
                     attestation_id, 
                     is_revoked, 
                     resolver_fee_token, 
                     resolver_fee_amount
-                );
-                if schema.revert_if_resolver_failed && !result {
-                    panic_with_felt252(SASErrors::RESOLVER_RETURNED_FALSE);
+                )) {
+                    Result::Ok(_) => {},
+                    Result::Err(data) => panic(data)
                 }
             }
-            result
         }
     }
 

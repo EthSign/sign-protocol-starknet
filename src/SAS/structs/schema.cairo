@@ -6,5 +6,4 @@ struct Schema {
     resolver: ContractAddress,
     revocable: bool,
     max_valid_for: u64,
-    revert_if_resolver_failed: bool,
 }

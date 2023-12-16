@@ -48,7 +48,6 @@ fn register_basic_schema(dispatcher: ISASSafeDispatcher) -> (felt252, Schema) {
         resolver: Zeroable::zero(),
         revocable: false,
         max_valid_for: 1000,
-        revert_if_resolver_failed: false,
     };
     dispatcher.register(
         schema_id,
@@ -56,7 +55,6 @@ fn register_basic_schema(dispatcher: ISASSafeDispatcher) -> (felt252, Schema) {
         schema.resolver, 
         schema.revocable, 
         schema.max_valid_for,
-        schema.revert_if_resolver_failed,
     ).unwrap();
     (schema_id, schema)
 }
@@ -70,7 +68,6 @@ fn register_revocable_schema(
         resolver: Zeroable::zero(),
         revocable: true,
         max_valid_for: 1000,
-        revert_if_resolver_failed: false,
     };
     dispatcher.register(
         schema_id,
@@ -78,7 +75,6 @@ fn register_revocable_schema(
         schema.resolver, 
         schema.revocable, 
         schema.max_valid_for,
-        schema.revert_if_resolver_failed,
     ).unwrap();
     (schema_id, schema)
 }
@@ -101,7 +97,6 @@ fn register_test() {
         resolver: Zeroable::zero(),
         revocable: false,
         max_valid_for: 0,
-        revert_if_resolver_failed: false,
     };
     dispatcher.register(
         schema_id,
@@ -109,7 +104,6 @@ fn register_test() {
         schema.resolver, 
         schema.revocable, 
         schema.max_valid_for,
-        schema.revert_if_resolver_failed,
     ).unwrap();
     // Check if schema is properly stored
     assert(
@@ -123,7 +117,6 @@ fn register_test() {
         schema.resolver, 
         schema.revocable, 
         schema.max_valid_for,
-        schema.revert_if_resolver_failed,
     ) {
         Result::Ok(_) => panic_with_felt252(
             'Should panic - 0'

@@ -8,5 +8,5 @@ trait ISASResolver<TContractState> {
         is_revoked: bool,
         fee_token: ContractAddress,
         fee_amount: u256,
-    ) -> bool;
+    );
 } 

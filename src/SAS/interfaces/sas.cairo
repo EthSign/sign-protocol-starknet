@@ -14,7 +14,6 @@ trait ISAS<TContractState> {
         resolver: ContractAddress, 
         revocable: bool, 
         max_valid_for: u64,
-        revert_if_resolver_failed: bool,
     );
     // On-chain attestation
     fn attest(
@@ -26,14 +25,14 @@ trait ISAS<TContractState> {
         data: Span::<felt252>,
         resolver_fee_token: ContractAddress,
         resolver_fee_amount: u256,
-    ) -> bool;
+    );
 
     fn revoke(
         ref self: TContractState, 
         attestation_id: felt252,
         resolver_fee_token: ContractAddress,
         resolver_fee_amount: u256,
-    ) -> bool;
+    );
 
     // Off-chain attestation
     fn attest_offchain(
@@ -122,5 +121,4 @@ mod SASErrors {
     const SCHEMA_ID_EXISTS: felt252 = 'SCHEMA_ID_EXISTS';
     const SCHEMA_ID_DOES_NOT_EXIST: felt252 = 'SCHEMA_ID_DOES_NOT_EXIST';
     const SCHEMA_NOT_REVOCABLE: felt252 = 'SCHEMA_NOT_REVOCABLE';
-    const RESOLVER_RETURNED_FALSE: felt252 = 'RESOLVER_RETURNED_FALSE';
 }
