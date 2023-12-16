@@ -7,7 +7,7 @@ struct AttestationMetadata {
     schema_id: felt252,
     attester: ContractAddress,
     notary: ContractAddress,
-    resolver: ContractAddress,
+    recipient: ContractAddress,
     valid_until: u64,
     revoked: bool
 }

@@ -139,14 +139,14 @@ fn self_attest_test() {
     let dispatcher = deploy_sas();
     let (schema_id, schema) = register_basic_schema(dispatcher);
     let attestation_id = 'testAId';
-    let resolver: ContractAddress = Zeroable::zero();
+    let recipient: ContractAddress = Zeroable::zero();
     let valid_until = get_block_timestamp();
     let data = (array!['0', '1', '22']).span();
     // Check if function call is successful
     dispatcher.self_attest(
         attestation_id,
         schema_id,
-        resolver,
+        recipient,
         valid_until,
         data
     ).unwrap();
@@ -160,7 +160,7 @@ fn self_attest_test() {
         schema_id: schema_id,
         attester: test_address(),
         notary: Zeroable::zero(),
-        resolver: resolver,
+        recipient: recipient,
         valid_until: valid_until,
         revoked: false
     };
@@ -174,7 +174,7 @@ fn self_attest_test() {
     match dispatcher.self_attest(
         attestation_id,
         schema_id,
-        resolver,
+        recipient,
         valid_until,
         data
     ) {
@@ -191,7 +191,7 @@ fn self_attest_test() {
     match dispatcher.self_attest(
         attestation_id1,
         schema_id,
-        resolver,
+        recipient,
         invalidValidUntil,
         data
     ) {
@@ -208,7 +208,7 @@ fn self_attest_test() {
     match dispatcher.self_attest(
         attestation_id1,
         invalidSchemaId,
-        resolver,
+        recipient,
         valid_until,
         data
     ) {
@@ -228,7 +228,7 @@ fn notary_attest_test() {
     let attestation_id = 'testAId';
     let attester: ContractAddress = 123.try_into().unwrap();
     let attester_sig = Signature { r: 1, s: 1, y_parity: true };
-    let resolver: ContractAddress = Zeroable::zero();
+    let recipient: ContractAddress = Zeroable::zero();
     let valid_until = get_block_timestamp();
     let data = (array!['0', '1', '22']).span();
     // Check if function call is successful
@@ -237,7 +237,7 @@ fn notary_attest_test() {
         schema_id,
         attester_sig,
         attester,
-        resolver,
+        recipient,
         valid_until,
         data
     ).unwrap();
@@ -251,7 +251,7 @@ fn notary_attest_test() {
         schema_id: schema_id,
         attester: attester,
         notary: test_address(),
-        resolver: resolver,
+        recipient: recipient,
         valid_until: valid_until,
         revoked: false
     };
@@ -273,7 +273,7 @@ fn revoke_test() {
     let attester: ContractAddress = 123.try_into().unwrap();
     let attester_sig = Signature { r: 1, s: 1, y_parity: true };
     let attester_revoke_sig = Signature { r: 3, s: 3, y_parity: true };
-    let resolver: ContractAddress = Zeroable::zero();
+    let recipient: ContractAddress = Zeroable::zero();
     let valid_until = get_block_timestamp();
     let data = (array!['0', '1', '22']).span();
     dispatcher.notary_attest(
@@ -281,7 +281,7 @@ fn revoke_test() {
         schema_id,
         attester_sig,
         attester,
-        resolver,
+        recipient,
         valid_until,
         data
     ).unwrap();
@@ -307,7 +307,7 @@ fn revoke_test() {
         schema_id1,
         attester_sig,
         attester,
-        resolver,
+        recipient,
         valid_until,
         data
     ).unwrap();
@@ -329,7 +329,7 @@ fn revoke_test() {
     dispatcher.self_attest(
         attestation_id2,
         schema_id,
-        resolver,
+        recipient,
         valid_until,
         data
     ).unwrap();

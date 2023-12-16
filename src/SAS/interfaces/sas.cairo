@@ -21,7 +21,7 @@ trait ISAS<TContractState> {
         ref self: TContractState, 
         attestation_id: felt252, 
         schema_id: felt252, 
-        resolver: ContractAddress, 
+        recipient: ContractAddress, 
         valid_until: u64, 
         data: Span::<felt252>
     ) -> bool;
@@ -32,7 +32,7 @@ trait ISAS<TContractState> {
         schema_id: felt252, 
         attester_sig: Signature, 
         attester: ContractAddress, 
-        resolver: ContractAddress, 
+        recipient: ContractAddress, 
         valid_until: u64, 
         data: Span::<felt252>
     ) -> bool;
@@ -87,7 +87,7 @@ mod SASEvents {
         #[key]
         notary: super::ContractAddress,
         #[key]
-        resolver: super::ContractAddress,
+        recipient: super::ContractAddress,
         #[key]
         attestation_id: felt252,
         #[key]
@@ -100,7 +100,7 @@ mod SASEvents {
         #[key]
         notary: super::ContractAddress,
         #[key]
-        resolver: super::ContractAddress,
+        recipient: super::ContractAddress,
         #[key]
         attestation_id: felt252,
         #[key]

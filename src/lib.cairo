@@ -97,7 +97,7 @@ mod SAS {
             ref self: ContractState, 
             attestation_id: felt252, 
             schema_id: felt252, 
-            resolver: ContractAddress, 
+            recipient: ContractAddress, 
             valid_until: u64, 
             data: Span::<felt252>
         ) -> bool {
@@ -112,7 +112,7 @@ mod SAS {
                 schema_id: schema_id,
                 attester: get_caller_address(),
                 notary: Zeroable::zero(),
-                resolver: resolver,
+                recipient: recipient,
                 valid_until: valid_until,
                 revoked: false,
                 data: data
@@ -130,7 +130,7 @@ mod SAS {
             schema_id: felt252, 
             attester_sig: Signature, 
             attester: ContractAddress, 
-            resolver: ContractAddress, 
+            recipient: ContractAddress, 
             valid_until: u64, 
             data: Span::<felt252>
         ) -> bool {
@@ -145,7 +145,7 @@ mod SAS {
                 schema_id: schema_id,
                 attester: attester,
                 notary: get_caller_address(),
-                resolver: resolver,
+                recipient: recipient,
                 valid_until: valid_until,
                 revoked: false,
                 data: data
@@ -249,7 +249,7 @@ mod SAS {
             schema_id: felt252, 
             attester: ContractAddress, 
             notary: ContractAddress, 
-            resolver: ContractAddress, 
+            recipient: ContractAddress, 
             valid_until: u64, 
             revoked: bool, 
             data: Span::<felt252>
@@ -261,7 +261,7 @@ mod SAS {
                 schema_id,
                 attester,
                 notary,
-                resolver,
+                recipient,
                 valid_until,
                 revoked
              };
@@ -275,7 +275,7 @@ mod SAS {
                     Attested {
                         attester,
                         notary,
-                        resolver,
+                        recipient,
                         attestation_id,
                         schema_id
                     }
@@ -335,7 +335,7 @@ mod SAS {
                     Revoked {
                         attester: attestation_metadata.attester,
                         notary: attestation_metadata.notary,
-                        resolver: attestation_metadata.resolver,
+                        recipient: attestation_metadata.recipient,
                         attestation_id: attestation_id,
                         schema_id: attestation_metadata.schema_id
                     }
