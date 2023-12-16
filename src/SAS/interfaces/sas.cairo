@@ -20,7 +20,7 @@ trait ISAS<TContractState> {
         ref self: TContractState, 
         attestation_id: felt252,
         schema_id: felt252, 
-        recipient: ContractAddress, 
+        recipients: Span<felt252>, 
         valid_until: u64, 
         data: Span::<felt252>,
         resolver_fee_token: ContractAddress,
@@ -75,7 +75,7 @@ mod SASEvents {
         #[key]
         attester: super::ContractAddress,
         #[key]
-        recipient: super::ContractAddress,
+        recipients: Span<felt252>,
         #[key]
         attestation_id: felt252,
         #[key]
@@ -83,10 +83,6 @@ mod SASEvents {
     }
     #[derive(Drop, starknet::Event)]
     struct Revoked {
-        #[key]
-        attester: super::ContractAddress,
-        #[key]
-        recipient: super::ContractAddress,
         #[key]
         attestation_id: felt252,
         #[key]

@@ -132,14 +132,14 @@ fn attest_test() {
     let dispatcher = deploy_sas();
     let (schema_id, schema) = register_basic_schema(dispatcher);
     let attestation_id = 'testAId';
-    let recipient: ContractAddress = Zeroable::zero();
+    let recipients = array!['0'].span();
     let valid_until = get_block_timestamp();
     let data = (array!['0', '1', '22']).span();
     // Check if function call is successful
     dispatcher.attest(
         attestation_id,
         schema_id,
-        recipient,
+        recipients,
         valid_until,
         data,
         Zeroable::zero(),
@@ -152,7 +152,7 @@ fn attest_test() {
     let metadata = AttestationMetadata {
         schema_id: schema_id,
         attester: test_address(),
-        recipient: recipient,
+        recipients: recipients,
         valid_until: valid_until,
         revoked: false
     };
@@ -166,7 +166,7 @@ fn attest_test() {
     match dispatcher.attest(
         attestation_id,
         schema_id,
-        recipient,
+        recipients,
         valid_until,
         data,
         Zeroable::zero(),
@@ -185,7 +185,7 @@ fn attest_test() {
     match dispatcher.attest(
         attestation_id1,
         schema_id,
-        recipient,
+        recipients,
         invalidValidUntil,
         data,
         Zeroable::zero(),
@@ -204,7 +204,7 @@ fn attest_test() {
     match dispatcher.attest(
         attestation_id1,
         invalidSchemaId,
-        recipient,
+        recipients,
         valid_until,
         data,
         Zeroable::zero(),
@@ -225,7 +225,7 @@ fn revoke_test() {
     let (schema_id, schema) = register_revocable_schema(dispatcher);
     let attestation_id = 'testAId';
     let attester: ContractAddress = 123.try_into().unwrap();
-    let recipient: ContractAddress = Zeroable::zero();
+    let recipients = array!['0'].span();
     let valid_until = get_block_timestamp();
     let data = (array!['0', '1', '22']).span();
     // Revoking a self attestation
@@ -233,7 +233,7 @@ fn revoke_test() {
     dispatcher.attest(
         attestation_id2,
         schema_id,
-        recipient,
+        recipients,
         valid_until,
         data,
         Zeroable::zero(),

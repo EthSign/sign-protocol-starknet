@@ -95,7 +95,7 @@ mod SAS {
             ref self: ContractState, 
             attestation_id: felt252, 
             schema_id: felt252, 
-            recipient: ContractAddress, 
+            recipients: Span<felt252>, 
             valid_until: u64, 
             data: Span::<felt252>,
             resolver_fee_token: ContractAddress,
@@ -110,7 +110,7 @@ mod SAS {
                 attestation_id: attestation_id, 
                 schema_id: schema_id,
                 attester: get_caller_address(),
-                recipient: recipient,
+                recipients: recipients,
                 valid_until: valid_until,
                 revoked: false,
                 data: data
@@ -215,7 +215,7 @@ mod SAS {
             attestation_id: felt252, 
             schema_id: felt252, 
             attester: ContractAddress, 
-            recipient: ContractAddress, 
+            recipients: Span<felt252>, 
             valid_until: u64, 
             revoked: bool, 
             data: Span::<felt252>
@@ -224,7 +224,7 @@ mod SAS {
             let new_attestation_metadata = AttestationMetadata { 
                 schema_id,
                 attester,
-                recipient,
+                recipients,
                 valid_until,
                 revoked
              };
@@ -237,7 +237,7 @@ mod SAS {
                 Event::Attested(
                     Attested {
                         attester,
-                        recipient,
+                        recipients,
                         attestation_id,
                         schema_id
                     }
@@ -285,8 +285,6 @@ mod SAS {
             self.emit(
                 Event::Revoked(
                     Revoked {
-                        attester: attestation_metadata.attester,
-                        recipient: attestation_metadata.recipient,
                         attestation_id: attestation_id,
                         schema_id: attestation_metadata.schema_id
                     }
