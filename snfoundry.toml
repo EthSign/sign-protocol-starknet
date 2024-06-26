@@ -1,0 +1,4 @@
+[sncast.default]
+account = "deployer"
+accounts-file = "~/.starknet-accounts/sncast/sepolia.json"
+url = "https://free-rpc.nethermind.io/sepolia-juno"
