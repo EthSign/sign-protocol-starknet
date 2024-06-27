@@ -1,9 +1,9 @@
-use starknet::{ContractAddress, secp256_trait::Signature};
+use starknet::{ContractAddress};
 use sign_protocol::sp::model::{attestation::{Attestation, OffchainAttestation}, schema::Schema};
 
 #[starknet::interface]
 trait ISP<TContractState> {
-    fn register(ref self: TContractState, schema: Schema, delegate_signature: Span<felt252>,);
+    fn register(ref self: TContractState, schema: Schema, delegate_signature: Array<felt252>,);
 
     fn attest(
         ref self: TContractState,
@@ -11,7 +11,7 @@ trait ISP<TContractState> {
         hook_fees_erc20_token: ContractAddress,
         hook_fees_erc20_amount: u256,
         indexing_key: felt252,
-        delegate_signature: Span<felt252>,
+        delegate_signature: Array<felt252>,
         extra_data: Span<felt252>,
     ) -> u64;
 
@@ -21,7 +21,7 @@ trait ISP<TContractState> {
         reason: felt252,
         hook_fees_erc20_token: ContractAddress,
         hook_fees_erc20_amount: u256,
-        delegate_signature: Span<felt252>,
+        delegate_signature: Array<felt252>,
         extra_data: Span<felt252>,
     );
 
@@ -29,14 +29,14 @@ trait ISP<TContractState> {
         ref self: TContractState,
         offchain_attestation_id: felt252,
         delegate_attester: ContractAddress,
-        delegate_signature: Span<felt252>,
+        delegate_signature: Array<felt252>,
     );
 
     fn revoke_offchain(
         ref self: TContractState,
         offchain_attestation_id: felt252,
         reason: felt252,
-        delegate_signature: Span<felt252>,
+        delegate_signature: Array<felt252>,
     );
 
     fn get_schema(self: @TContractState, schema_id: felt252,) -> Schema;

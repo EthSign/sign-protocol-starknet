@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
-use sign_protocol::sp::felt252span::StoreFelt252Span;
+use sign_protocol::sp::util::{hashfelt252span::HashFelt252Span, storefelt252span::StoreFelt252Span};
 
-#[derive(PartialEq, Drop, Serde, Copy, starknet::Store)]
+#[derive(PartialEq, Drop, Serde, Copy, starknet::Store, Hash)]
 struct Schema {
     registrant: ContractAddress,
     revocable: bool,
