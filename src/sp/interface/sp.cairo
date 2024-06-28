@@ -3,7 +3,9 @@ use sign_protocol::sp::model::{attestation::{Attestation, OffchainAttestation}, 
 
 #[starknet::interface]
 trait ISP<TContractState> {
-    fn register(ref self: TContractState, schema: Schema, delegate_signature: Array<felt252>,);
+    fn register(
+        ref self: TContractState, schema: Schema, delegate_signature: Array<felt252>,
+    ) -> u64;
 
     fn attest(
         ref self: TContractState,
@@ -39,9 +41,9 @@ trait ISP<TContractState> {
         delegate_signature: Array<felt252>,
     );
 
-    fn get_schema(self: @TContractState, schema_id: felt252,) -> Schema;
+    fn get_schema(self: @TContractState, schema_id: u64,) -> Schema;
 
-    fn get_attestation(self: @TContractState, attestation_id: felt252,) -> Attestation;
+    fn get_attestation(self: @TContractState, attestation_id: u64,) -> Attestation;
 
     fn get_offchain_attestation(
         self: @TContractState, offchain_attestation_id: felt252,
@@ -71,7 +73,7 @@ trait ISP<TContractState> {
 mod SPEvents {
     #[derive(Drop, starknet::Event)]
     struct SchemaRegistered {
-        schema_id: felt252,
+        schema_id: u64,
     }
     #[derive(Drop, starknet::Event)]
     struct AttestationMade {
@@ -85,11 +87,11 @@ mod SPEvents {
     }
     #[derive(Drop, starknet::Event)]
     struct OffchainAttestationMade {
-        attestation_id: felt252,
+        attestation_id: u64,
     }
     #[derive(Drop, starknet::Event)]
     struct OffchainAttestationRevoked {
-        attestation_id: felt252,
+        attestation_id: u64,
         reason: felt252,
     }
 }
