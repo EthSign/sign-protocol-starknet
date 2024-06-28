@@ -7,8 +7,8 @@ trait ISPHook<TContractState> {
         attester: ContractAddress,
         schema_id: u64,
         attestation_id: u64,
-        fee_token: ContractAddress,
-        fee_amount: u256,
+        hook_fees_erc20_token: ContractAddress,
+        hook_fees_erc20_amount: u256,
         extra_data: Span<felt252>,
     );
     fn did_receive_revocation(
@@ -16,8 +16,8 @@ trait ISPHook<TContractState> {
         attester: ContractAddress,
         schema_id: u64,
         attestation_id: u64,
-        fee_token: ContractAddress,
-        fee_amount: u256,
+        hook_fees_erc20_token: ContractAddress,
+        hook_fees_erc20_amount: u256,
         extra_data: Span<felt252>,
     );
 }

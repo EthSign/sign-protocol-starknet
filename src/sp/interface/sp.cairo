@@ -87,11 +87,11 @@ mod SPEvents {
     }
     #[derive(Drop, starknet::Event)]
     struct OffchainAttestationMade {
-        attestation_id: u64,
+        offchain_attestation_id: felt252,
     }
     #[derive(Drop, starknet::Event)]
     struct OffchainAttestationRevoked {
-        attestation_id: u64,
+        offchain_attestation_id: felt252,
         reason: felt252,
     }
 }
