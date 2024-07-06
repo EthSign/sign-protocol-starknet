@@ -70,6 +70,7 @@ mod SP {
     fn constructor(ref self: ContractState, owner: ContractAddress) {
         self.ownable.initializer(owner);
         self.schema_counter.write(1);
+        self.attestation_counter.write(1);
     }
 
     #[abi(embed_v0)]
@@ -135,25 +136,37 @@ mod SP {
                 attestation.linked_attestation_id < attestation_id,
                 SPErrors::ATTESTATION_NONEXISTENT
             );
+            debug::print(array!['Hello1']);
+
             assert(
-                attestation.linked_attestation_id > 0
-                    && self
+                attestation.linked_attestation_id == 0
+                    || self
                         .attestation_registry
                         .read(attestation.linked_attestation_id)
                         .attester == attestation
                         .attester,
                 SPErrors::ATTESTATION_WRONG_ATTESTER
             );
+
+            debug::print(array!['Hello2']);
+
             assert(
                 attestation.schema_id < self.schema_counter.read(), SPErrors::SCHEMA_NONEXISTENT
             );
             let schema = self.schema_registry.read(attestation.schema_id);
+            debug::print(array!['Hello3']);
+
             assert(
                 schema.max_valid_for == 0 || schema.max_valid_for >= attestation.valid_until
                     - get_block_timestamp(),
                 SPErrors::ATTESTATION_INVALID_DURATION
             );
+            debug::print(array!['Hello4']);
+
             self.attestation_registry.write(attestation_id, attestation);
+
+            debug::print(array!['Hello5']);
+
             self
                 .emit(
                     Event::AttestationMade(
@@ -170,6 +183,9 @@ mod SP {
                     hook_fees_erc20_amount,
                     extra_data
                 );
+
+            debug::print(array!['Hello6']);
+
             attestation_id
         }
 
