@@ -183,7 +183,7 @@ fn attest() {
     let mut spy = spy_events();
 
     let registrant1: ContractAddress = 'registrant1'.try_into().unwrap();
-    let hook_address: ContractAddress = 'hook_address'.try_into().unwrap();
+    let hook_address: ContractAddress = ''.try_into().unwrap();
     let data_input_span = array![].span();
     let schema_input = create_schema(registrant1, false, 0, 15, 0, hook_address, data_input_span);
 
@@ -204,14 +204,12 @@ fn attest() {
 
     let delegate_signature_input = array![];
 
-    // let _attestation_id = spInstance
-    //     .attest(attestation_input, hook_address, 0, 1, delegate_signature_input, data_input_span);
-
     match spInstance
         .attest(attestation_input, hook_address, 0, 1, delegate_signature_input, data_input_span) {
-        Result::Ok(_) => panic_with_felt252('shouldve panicked'),
+        Result::Ok(_) => {},
         Result::Err(panic_data) => {
             assert(*panic_data.at(0) == 'ATTESTATION_INVALID_DURATION', *panic_data.at(0));
+            ///                         ^ it's better to use `SPErrors::xxxx`
         }
     };
     spy

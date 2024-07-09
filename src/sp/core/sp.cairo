@@ -17,7 +17,10 @@ mod SP {
             sp::{ISP, SPErrors, SPEvents}, sphook::{ISPHookDispatcher, ISPHookDispatcherTrait},
             versionable::IVersionable
         },
-        model::{attestation::{Attestation, OffchainAttestation}, schema::Schema}
+        model::{
+            attestation::{Attestation, AttestationInternal, OffchainAttestation}, schema::Schema
+        },
+        util::{storefelt252span::StoreFelt252Span}
     };
 
 
@@ -41,7 +44,8 @@ mod SP {
         schema_counter: u64,
         schema_registry: LegacyMap<u64, Schema>,
         attestation_counter: u64,
-        attestation_registry: LegacyMap<u64, Attestation>,
+        attestation_registry: LegacyMap<u64, AttestationInternal>,
+        attestation_data_registry: LegacyMap<u64, Span<felt252>>,
         offchain_attestation_registry: LegacyMap<felt252, OffchainAttestation>,
     }
 
@@ -136,8 +140,6 @@ mod SP {
                 attestation.linked_attestation_id < attestation_id,
                 SPErrors::ATTESTATION_NONEXISTENT
             );
-            debug::print(array!['Hello1']);
-
             assert(
                 attestation.linked_attestation_id == 0
                     || self
@@ -147,26 +149,36 @@ mod SP {
                         .attester,
                 SPErrors::ATTESTATION_WRONG_ATTESTER
             );
-
-            debug::print(array!['Hello2']);
-
+            assert(
+                !attestation.revoked && attestation.revoke_timestamp.is_zero(),
+                SPErrors::ATTESTATION_ALREADY_REVOKED
+            );
             assert(
                 attestation.schema_id < self.schema_counter.read(), SPErrors::SCHEMA_NONEXISTENT
             );
             let schema = self.schema_registry.read(attestation.schema_id);
-            debug::print(array!['Hello3']);
-
             assert(
                 schema.max_valid_for == 0 || schema.max_valid_for >= attestation.valid_until
                     - get_block_timestamp(),
                 SPErrors::ATTESTATION_INVALID_DURATION
             );
-            debug::print(array!['Hello4']);
-
-            self.attestation_registry.write(attestation_id, attestation);
-
-            debug::print(array!['Hello5']);
-
+            self
+                .attestation_registry
+                .write(
+                    attestation_id,
+                    AttestationInternal {
+                        schema_id: attestation.schema_id,
+                        linked_attestation_id: attestation.linked_attestation_id,
+                        attest_timestamp: get_block_timestamp(),
+                        revoke_timestamp: 0,
+                        attester: attestation.attester,
+                        valid_until: attestation.valid_until,
+                        data_location: attestation.data_location,
+                        revoked: false,
+                        recipients: attestation.recipients
+                    }
+                );
+            self.attestation_data_registry.write(attestation_id, attestation.data);
             self
                 .emit(
                     Event::AttestationMade(
@@ -176,16 +188,14 @@ mod SP {
             self
                 ._call_hook(
                     true,
-                    schema,
-                    attestation,
+                    attestation.schema_id,
+                    schema.hook,
+                    attestation.attester,
                     attestation_id,
                     hook_fees_erc20_token,
                     hook_fees_erc20_amount,
                     extra_data
                 );
-
-            debug::print(array!['Hello6']);
-
             attestation_id
         }
 
@@ -227,8 +237,9 @@ mod SP {
             self
                 ._call_hook(
                     false,
-                    schema,
-                    attestation,
+                    attestation.schema_id,
+                    schema.hook,
+                    attestation.attester,
                     attestation_id,
                     hook_fees_erc20_token,
                     hook_fees_erc20_amount,
@@ -313,7 +324,19 @@ mod SP {
         }
 
         fn get_attestation(self: @ContractState, attestation_id: u64,) -> Attestation {
-            self.attestation_registry.read(attestation_id)
+            let attestation = self.attestation_registry.read(attestation_id);
+            Attestation {
+                schema_id: attestation.schema_id,
+                linked_attestation_id: attestation.linked_attestation_id,
+                attest_timestamp: attestation.attest_timestamp,
+                revoke_timestamp: attestation.revoke_timestamp,
+                attester: attestation.attester,
+                valid_until: attestation.valid_until,
+                data_location: attestation.data_location,
+                revoked: attestation.revoked,
+                recipients: attestation.recipients,
+                data: self.attestation_data_registry.read(attestation_id)
+            }
         }
 
         fn get_offchain_attestation(
@@ -372,20 +395,21 @@ mod SP {
         fn _call_hook(
             ref self: ContractState,
             is_attestation: bool,
-            schema: Schema,
-            attestation: Attestation,
+            schema_id: u64,
+            schema_hook: ContractAddress,
+            attester: ContractAddress,
             attestation_id: u64,
             hook_fees_erc20_token: ContractAddress,
             hook_fees_erc20_amount: u256,
             extra_data: Span<felt252>,
         ) {
-            if schema.hook.is_non_zero() {
-                let hook = ISPHookDispatcher { contract_address: schema.hook };
+            if schema_hook.is_non_zero() {
+                let hook = ISPHookDispatcher { contract_address: schema_hook };
                 if is_attestation {
                     hook
                         .did_receive_attestation(
-                            attestation.attester,
-                            attestation.schema_id,
+                            attester,
+                            schema_id,
                             attestation_id,
                             hook_fees_erc20_token,
                             hook_fees_erc20_amount,
@@ -394,8 +418,8 @@ mod SP {
                 } else {
                     hook
                         .did_receive_revocation(
-                            attestation.attester,
-                            attestation.schema_id,
+                            attester,
+                            schema_id,
                             attestation_id,
                             hook_fees_erc20_token,
                             hook_fees_erc20_amount,
