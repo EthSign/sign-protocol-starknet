@@ -228,6 +228,25 @@ mod SP {
             }
             attestation.revoked = true;
             attestation.revoke_timestamp = get_block_timestamp();
+
+            // Believe Need This to Ensure The Attestation is Updated 
+            self
+                .attestation_registry
+                .write(
+                    attestation_id,
+                    AttestationInternal {
+                        schema_id: attestation.schema_id,
+                        linked_attestation_id: attestation.linked_attestation_id,
+                        attest_timestamp: attestation.attest_timestamp,
+                        revoke_timestamp: attestation.revoke_timestamp,
+                        attester: attestation.attester,
+                        valid_until: attestation.valid_until,
+                        data_location: attestation.data_location,
+                        revoked: attestation.revoked,
+                        recipients: attestation.recipients
+                    }
+                );
+
             self
                 .emit(
                     Event::AttestationRevoked(
