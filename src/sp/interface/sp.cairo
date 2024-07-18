@@ -41,6 +41,8 @@ trait ISP<TContractState> {
         delegate_signature: Array<felt252>,
     );
 
+    fn pause(ref self: TContractState, pause: bool);
+
     fn get_schema(self: @TContractState, schema_id: u64,) -> Schema;
 
     fn get_attestation(self: @TContractState, attestation_id: u64,) -> Attestation;

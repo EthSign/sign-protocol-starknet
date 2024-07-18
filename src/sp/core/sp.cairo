@@ -229,7 +229,6 @@ mod SP {
             attestation.revoked = true;
             attestation.revoke_timestamp = get_block_timestamp();
 
-            // Believe Need This to Ensure The Attestation is Updated 
             self
                 .attestation_registry
                 .write(
@@ -406,6 +405,15 @@ mod SP {
 
         fn attestation_counter(self: @ContractState) -> u64 {
             self.attestation_counter.read()
+        }
+
+        fn pause(ref self: ContractState, pause: bool) {
+            self.ownable.assert_only_owner();
+            if pause {
+                self.pausable.pause();
+            } else {
+                self.pausable.unpause();
+            }
         }
     }
 
